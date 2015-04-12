@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.1
+Version: 0.1.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -78,15 +78,18 @@ class WPUStoreLocator {
         /* Details */
         $fields['store_name'] = array(
             'box' => 'stores_details',
-            'name' => __('Name', 'wpustorelocator')
+            'name' => __('Name', 'wpustorelocator'),
+            'lang' => true,
         );
         $fields['store_openingtime'] = array(
             'box' => 'stores_details',
-            'name' => __('Opening time', 'wpustorelocator')
+            'name' => __('Opening time', 'wpustorelocator'),
+            'lang' => true,
         );
         $fields['store_phone'] = array(
             'box' => 'stores_details',
-            'name' => __('Phone number', 'wpustorelocator')
+            'name' => __('Phone number', 'wpustorelocator'),
+            'lang' => true,
         );
         $fields['store_email'] = array(
             'box' => 'stores_details',
@@ -96,23 +99,33 @@ class WPUStoreLocator {
         /* Localization */
         $fields['store_address'] = array(
             'box' => 'stores_localization',
-            'name' => __('Address', 'wpustorelocator')
+            'name' => __('Address', 'wpustorelocator'),
+            'lang' => true,
+        );
+        $fields['store_address2'] = array(
+            'box' => 'stores_localization',
+            'name' => __('Address2', 'wpustorelocator'),
+            'lang' => true,
         );
         $fields['store_zip'] = array(
             'box' => 'stores_localization',
-            'name' => __('Zip code', 'wpustorelocator')
+            'name' => __('Zip code', 'wpustorelocator'),
+            'lang' => true,
         );
         $fields['store_city'] = array(
             'box' => 'stores_localization',
-            'name' => __('City', 'wpustorelocator')
+            'name' => __('City', 'wpustorelocator'),
+            'lang' => true,
+        );
+        $fields['store_region'] = array(
+            'box' => 'stores_localization',
+            'name' => __('Region', 'wpustorelocator'),
+            'lang' => true,
         );
         $fields['store_country'] = array(
             'box' => 'stores_localization',
-            'name' => __('Country', 'wpustorelocator')
-        );
-        $fields['store_country'] = array(
-            'box' => 'stores_localization',
-            'name' => __('Country', 'wpustorelocator')
+            'name' => __('Country', 'wpustorelocator'),
+            'lang' => true,
         );
 
         /* Map position */
