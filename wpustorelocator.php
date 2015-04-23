@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.2
+Version: 0.3
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,11 +12,13 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
+    private $script_version = '0.3';
     function __construct() {
 
         global $wpdb;
         $this->table_name = $wpdb->prefix . 'wpustorelocatorlist';
-        $this->api_key = get_option('wpustorelocator_serverapikey');
+        $this->serverapi_key = get_option('wpustorelocator_serverapikey');
+        $this->frontapi_key = get_option('wpustorelocator_frontapikey');
 
         add_filter('wputh_get_posttypes', array(&$this,
             'set_theme_posttypes'
@@ -39,6 +41,36 @@ class WPUStoreLocator {
         add_action('save_post', array(&$this,
             'save_latlng'
         ));
+        add_action('wp_enqueue_scripts', array(&$this,
+            'enqueue_scripts'
+        ));
+        add_action('admin_enqueue_scripts', array(&$this,
+            'enqueue_scripts'
+        ));
+        add_action('add_meta_boxes_stores', array(&$this,
+            'adding_custom_meta_boxes'
+        ));
+        add_action('init', array(&$this,
+            'load_languages'
+        ));
+    }
+
+    function load_languages() {
+        load_plugin_textdomain('wpustorelocator', false, dirname(__FILE__) . '/lang/');
+    }
+
+    function enqueue_scripts() {
+        if (!is_admin()) {
+            wp_enqueue_script('wpustorelocator-front', plugins_url('/assets/front.js', __FILE__) , array(
+                'jquery'
+            ) , $this->script_version, true);
+        }
+        else {
+            wp_enqueue_script('wpustorelocator-back', plugins_url('/assets/back.js', __FILE__) , array(
+                'jquery'
+            ) , $this->script_version, true);
+        }
+        wp_enqueue_script('wpustorelocator-maps', 'http://maps.googleapis.com/maps/api/js?libraries=places&key=' . $this->frontapi_key . '&sensor=false', false, '3');
     }
 
     /* ----------------------------------------------------------
@@ -86,14 +118,18 @@ class WPUStoreLocator {
 
         /* Settings */
         $options['wpustorelocator_radiuslist'] = array(
-            'label' => __('Radius list', 'wputh') ,
+            'label' => __('Radius list', 'wpustorelocator') ,
             'box' => 'wpustorelocator_settings',
             'type' => 'textarea'
         );
 
         /* API */
         $options['wpustorelocator_serverapikey'] = array(
-            'label' => __('Server API Key', 'wputh') ,
+            'label' => __('Server API Key', 'wpustorelocator') ,
+            'box' => 'wpustorelocator_api'
+        );
+        $options['wpustorelocator_frontapikey'] = array(
+            'label' => __('Front API Key', 'wpustorelocator') ,
             'box' => 'wpustorelocator_api'
         );
         return $options;
@@ -136,22 +172,20 @@ class WPUStoreLocator {
         /* Details */
         $fields['store_name'] = array(
             'box' => 'stores_details',
-            'name' => __('Name', 'wpustorelocator') ,
-            'lang' => true,
-        );
-        $fields['store_openingtime'] = array(
-            'box' => 'stores_details',
-            'name' => __('Opening time', 'wpustorelocator') ,
-            'lang' => true,
-        );
-        $fields['store_phone'] = array(
-            'box' => 'stores_details',
-            'name' => __('Phone number', 'wpustorelocator') ,
-            'lang' => true,
+            'name' => __('Name', 'wpustorelocator')
         );
         $fields['store_email'] = array(
             'box' => 'stores_details',
             'name' => __('Email address', 'wpustorelocator')
+        );
+
+        $fields['store_openingtime'] = array(
+            'box' => 'stores_details',
+            'name' => __('Opening time', 'wpustorelocator')
+        );
+        $fields['store_phone'] = array(
+            'box' => 'stores_details',
+            'name' => __('Phone number', 'wpustorelocator')
         );
 
         /* Localization */
@@ -228,7 +262,7 @@ class WPUStoreLocator {
         // Sort stores
         $stores = array();
         foreach ($location_query as $store) {
-            $stores[] = $this->get_store_postinfos($store);
+            $stores[$store->ID] = $this->get_store_postinfos($store);
         }
 
         return $stores;
@@ -238,7 +272,7 @@ class WPUStoreLocator {
 
         $this->tmp_lat = $lat;
         $this->tmp_lng = $lng;
-        $this->tmp_radius = $radius * 1.609344;
+        $this->tmp_radius = $radius / 1.609344;
 
         // Add our filter before executing the query
         add_filter('posts_where', array(&$this,
@@ -265,9 +299,9 @@ class WPUStoreLocator {
     }
 
     function get_radius() {
-        $radius = get_option('wpustorelocator_radiuslist');
+        $radius_base = get_option('wpustorelocator_radiuslist');
         $radius_list = array();
-        $raw_radius_list = explode("\n", $radius_list);
+        $raw_radius_list = explode("\n", $radius_base);
         foreach ($raw_radius_list as $radius) {
             $radius = trim($radius);
             if (is_numeric($radius)) {
@@ -276,6 +310,108 @@ class WPUStoreLocator {
         }
         natsort($radius_list);
         return $radius_list;
+    }
+
+    /* ----------------------------------------------------------
+      Map datas
+    ---------------------------------------------------------- */
+
+    function get_json_from_storelist($stores) {
+        $datas = array();
+        foreach ($stores as $store) {
+
+            $data = array(
+                'name' => $store['post']->post_title,
+                'lat' => $store['metas']['store_lat'][0],
+                'lng' => $store['metas']['store_lng'][0],
+                'address' => $this->get_address_from_store($store) ,
+                'link' => '<a class="store-link" href="' . get_permalink($store['post']->ID) . '">' . __('View this store', 'wpustorelocator') . '</a>',
+            );
+
+            $datas[] = $data;
+        }
+
+        return json_encode($datas);
+    }
+
+    /* ----------------------------------------------------------
+      Display helpers
+    ---------------------------------------------------------- */
+
+    function get_address_from_store($store, $title_tag = 'h3') {
+        $content = '<div class="store-address">';
+        $content.= '<' . $title_tag . ' class="store-name">' . $store['metas']['store_name'][0] . '</' . $title_tag . '>';
+        $content.= $store['metas']['store_address'][0] . '<br />';
+        if (!empty($store['metas']['store_address2'][0])) {
+            $content.= $store['metas']['store_address2'][0] . '<br />';
+        }
+        $content.= $store['metas']['store_zip'][0] . ' ' . $store['metas']['store_city'][0] . '<br />';
+        $content.= $store['metas']['store_country'][0];
+        $content.= '</div>';
+
+        return $content;
+    }
+
+    function get_default_search_form() {
+        $html = '';
+        $html.= '<form id="wpustorelocator-search" action="#" method="get"><div>';
+        $html.= $this->get_default_search_fields();
+        $html.= '<button class="cssc-button" type="submit">Search</button>';
+        $html.= '</div></form>';
+        return $html;
+    }
+
+    function get_default_search_fields() {
+        return '<input id="wpustorelocator-search-address" type="text" name="address" value="" />' . '<input id="wpustorelocator-search-lat" type="hidden" name="lat" value="" />' . '<input id="wpustorelocator-search-lng" type="hidden" name="lng" value="" />';
+    }
+
+    /* ----------------------------------------------------------
+      Admin
+    ---------------------------------------------------------- */
+
+    function adding_custom_meta_boxes($post) {
+        add_meta_box('geocoding-metabox', __('Geocoding') , array(&$this,
+            'render_box_geocoding'
+        ) , 'stores');
+    }
+
+    function render_box_geocoding() {
+        echo '<p><label for="wpustorelocator-admingeocoding-content">' . __('Please type and select the address below and validate by pressing the Enter button to update GPS Coordinates', 'wpustorelocator') . '</label></p>';
+        echo '<p><input id="wpustorelocator-admingeocoding-content" type="text" name="_geocoding" class="widefat" value="" /></p>';
+    }
+
+    /* ----------------------------------------------------------
+      Search
+    ---------------------------------------------------------- */
+
+    function get_search_parameters($src) {
+        $lat = 0;
+        if (isset($src['lat']) && preg_match('/([0-9\.])/', $src['lat'])) {
+            $lat = $src['lat'];
+        }
+
+        $lng = 0;
+        if (isset($src['lng']) && preg_match('/([0-9\.])/', $src['lng'])) {
+            $lng = $src['lng'];
+        }
+
+        if (isset($src['address']) && $lat == 0 && $lng == 0 && !empty($src['address'])) {
+            $details = $this->geocode_address($src['address']);
+            $lat = $details['lat'];
+            $lng = $details['lng'];
+        }
+
+        $radius_list = $this->get_radius();
+        $radius = $radius_list[0];
+        if (isset($src['radius']) && in_array($src['radius'], $radius_list)) {
+            $radius = $src['radius'];
+        }
+
+        return array(
+            'lat' => $lat,
+            'lng' => $lng,
+            'radius' => $radius
+        );
     }
 
     /* ----------------------------------------------------------
@@ -302,7 +438,7 @@ class WPUStoreLocator {
     }
 
     function geocode_address($address) {
-        $get = wp_remote_get('https://maps.googleapis.com/maps/api/geocode/json?address=' . urlencode($address) . '&key=' . $this->api_key);
+        $get = wp_remote_get('https://maps.googleapis.com/maps/api/geocode/json?address=' . urlencode($address) . '&key=' . $this->serverapi_key);
         $geoloc = json_decode($get['body']);
         $lat = 0;
         $lng = 0;
@@ -357,8 +493,6 @@ class WPUStoreLocator {
         }
     }
 
-    #
-
     /* Create table */
     function table_creation() {
 
@@ -378,3 +512,4 @@ $WPUStoreLocator = new WPUStoreLocator();
 register_activation_hook(__FILE__, array(&$WPUStoreLocator,
     'table_creation'
 ));
+
