@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.3
+Version: 0.3.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -50,13 +50,13 @@ class WPUStoreLocator {
         add_action('add_meta_boxes_stores', array(&$this,
             'adding_custom_meta_boxes'
         ));
-        add_action('init', array(&$this,
+        add_action('plugins_loaded', array(&$this,
             'load_languages'
         ));
     }
 
     function load_languages() {
-        load_plugin_textdomain('wpustorelocator', false, dirname(__FILE__) . '/lang/');
+        load_plugin_textdomain('wpustorelocator', false, dirname( plugin_basename( __FILE__ ) ) . '/lang');
     }
 
     function enqueue_scripts() {
@@ -181,7 +181,8 @@ class WPUStoreLocator {
 
         $fields['store_openingtime'] = array(
             'box' => 'stores_details',
-            'name' => __('Opening time', 'wpustorelocator')
+            'name' => __('Opening time', 'wpustorelocator'),
+            'type' => 'textarea'
         );
         $fields['store_phone'] = array(
             'box' => 'stores_details',
