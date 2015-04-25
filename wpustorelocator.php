@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.3.1
+Version: 0.4
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -41,6 +41,9 @@ class WPUStoreLocator {
         add_action('save_post', array(&$this,
             'save_latlng'
         ));
+        add_action('wp_head', array(&$this,
+            'display_infos'
+        ) , 99);
         add_action('wp_enqueue_scripts', array(&$this,
             'enqueue_scripts'
         ));
@@ -55,17 +58,31 @@ class WPUStoreLocator {
         ));
     }
 
+    function display_infos() {
+        if (!is_post_type_archive('stores') || !is_singular('stores')) {
+
+            //return;
+
+
+        }
+        $infos = array(
+            'icon' => apply_filters('wpustorelocator_iconurl', '')
+        );
+
+        echo '<script>window.wpustorelocatorconf=' . json_encode($infos) . ';</script>';
+    }
+
     function load_languages() {
-        load_plugin_textdomain('wpustorelocator', false, dirname( plugin_basename( __FILE__ ) ) . '/lang');
+        load_plugin_textdomain('wpustorelocator', false, dirname(plugin_basename(__FILE__)) . '/lang');
     }
 
     function enqueue_scripts() {
-        if (!is_admin()) {
+        if (is_post_type_archive('stores') || is_singular('stores')) {
             wp_enqueue_script('wpustorelocator-front', plugins_url('/assets/front.js', __FILE__) , array(
                 'jquery'
             ) , $this->script_version, true);
         }
-        else {
+        if (is_admin()) {
             wp_enqueue_script('wpustorelocator-back', plugins_url('/assets/back.js', __FILE__) , array(
                 'jquery'
             ) , $this->script_version, true);
@@ -82,7 +99,7 @@ class WPUStoreLocator {
             'menu_icon' => 'dashicons-location-alt',
             'name' => __('Store', 'wpustorelocator') ,
             'plural' => __('Stores', 'wpustorelocator') ,
-            'female' => 0,
+            'female' => 1,
             'supports' => array(
                 'title',
                 'thumbnail'
@@ -181,7 +198,7 @@ class WPUStoreLocator {
 
         $fields['store_openingtime'] = array(
             'box' => 'stores_details',
-            'name' => __('Opening time', 'wpustorelocator'),
+            'name' => __('Opening time', 'wpustorelocator') ,
             'type' => 'textarea'
         );
         $fields['store_phone'] = array(
@@ -213,6 +230,8 @@ class WPUStoreLocator {
         $fields['store_country'] = array(
             'box' => 'stores_localization',
             'name' => __('Country', 'wpustorelocator') ,
+            'type' => 'select',
+            'datas' => $this->get_countries() ,
         );
 
         /* Map position */
@@ -232,25 +251,8 @@ class WPUStoreLocator {
     }
 
     /* ----------------------------------------------------------
-      Get Stores
+      Get datas
     ---------------------------------------------------------- */
-
-    function location_posts_where($where) {
-
-        global $wpdb;
-
-        // Append our radius calculation to the WHERE
-        $where.= $wpdb->prepare(" AND $wpdb->posts.ID IN (SELECT post_id FROM " . $this->table_name . " WHERE
-            ( 3959 * acos( cos( radians(%s) )
-            * cos( radians( lat ) )
-            * cos( radians( lng )
-            - radians(%s) )
-            + sin( radians(%s) )
-            * sin( radians( lat ) ) ) ) <= %s)", $this->tmp_lat, $this->tmp_lng, $this->tmp_lat, $this->tmp_radius);
-
-        // Return the updated WHERE part of the query
-        return $where;
-    }
 
     function get_stores_list() {
 
@@ -313,6 +315,36 @@ class WPUStoreLocator {
         return $radius_list;
     }
 
+    function get_countries($full = false) {
+        $csv = array_map('str_getcsv', file(dirname(__FILE__) . '/inc/countries.csv'));
+
+        $countries = array();
+        foreach ($csv as $country) {
+            $value = $country[3];
+            if ($full) {
+                $value = array(
+                    'lat' => $country[1],
+                    'lng' => $country[2],
+                    'name' => $country[3]
+                );
+            }
+            $countries[$country[0]] = $value;
+        }
+        return $countries;
+    }
+
+    function get_stores_countries() {
+        $countries = array();
+        $country_list = $this->get_countries(true);
+        $store_list = $this->get_stores_list();
+        foreach ($store_list as $store) {
+            if (isset($store['metas']['store_country']) && array_key_exists($store['metas']['store_country'][0], $country_list)) {
+                $countries[$store['metas']['store_country'][0]] = $country_list[$store['metas']['store_country'][0]];
+            }
+        }
+        return $countries;
+    }
+
     /* ----------------------------------------------------------
       Map datas
     ---------------------------------------------------------- */
@@ -347,7 +379,13 @@ class WPUStoreLocator {
             $content.= $store['metas']['store_address2'][0] . '<br />';
         }
         $content.= $store['metas']['store_zip'][0] . ' ' . $store['metas']['store_city'][0] . '<br />';
-        $content.= $store['metas']['store_country'][0];
+
+        $country = '';
+        $country_list = $this->get_countries();
+        if (isset($country_list[$store['metas']['store_country'][0]])) {
+            $content.= $country_list[$store['metas']['store_country'][0]];
+        }
+
         $content.= '</div>';
 
         return $content;
@@ -363,7 +401,27 @@ class WPUStoreLocator {
     }
 
     function get_default_search_fields() {
-        return '<input id="wpustorelocator-search-address" type="text" name="address" value="" />' . '<input id="wpustorelocator-search-lat" type="hidden" name="lat" value="" />' . '<input id="wpustorelocator-search-lng" type="hidden" name="lng" value="" />';
+        $address_value = '';
+        if (isset($_GET['address'])) {
+            $address_value = $_GET['address'];
+        }
+        $return = '<input id="wpustorelocator-search-address" type="text" name="address" value="' . esc_attr($address_value) . '" />';
+        $return.= '<input id="wpustorelocator-search-lat" type="hidden" name="lat" value="" />';
+        $return.= '<input id="wpustorelocator-search-lng" type="hidden" name="lng" value="" />';
+        return $return;
+    }
+
+    function get_default_switch_country(){
+        $return = '';
+        $countries = $this->get_stores_countries();
+        if (!empty($countries)) {
+            $return .= '<select id="wpustorelocator-country" name="country">';
+            foreach ($countries as $country) {
+                $return .= '<option value="'.$country['lat'].'|'.$country['lng'].'">'.$country['name'].'</option>';
+            }
+            $return .= '</select>';
+        }
+        return $return;
     }
 
     /* ----------------------------------------------------------
@@ -415,6 +473,23 @@ class WPUStoreLocator {
         );
     }
 
+    function location_posts_where($where) {
+
+        global $wpdb;
+
+        // Append our radius calculation to the WHERE
+        $where.= $wpdb->prepare(" AND $wpdb->posts.ID IN (SELECT post_id FROM " . $this->table_name . " WHERE
+            ( 3959 * acos( cos( radians(%s) )
+            * cos( radians( lat ) )
+            * cos( radians( lng )
+            - radians(%s) )
+            + sin( radians(%s) )
+            * sin( radians( lat ) ) ) ) <= %s)", $this->tmp_lat, $this->tmp_lng, $this->tmp_lat, $this->tmp_radius);
+
+        // Return the updated WHERE part of the query
+        return $where;
+    }
+
     /* ----------------------------------------------------------
       Geocoding
     ---------------------------------------------------------- */
@@ -426,7 +501,13 @@ class WPUStoreLocator {
             'lng' => 0
         );
 
-        $address = get_post_meta($post_id, 'store_address', 1) . ', ' . get_post_meta($post_id, 'store_zip', 1) . ' ' . get_post_meta($post_id, 'store_city', 1) . ', ' . get_post_meta($post_id, 'store_country', 1);
+        $country = get_post_meta($post_id, 'store_country', 1);
+        $country_list = $this->get_countries();
+        if (isset($country_list[$country])) {
+            $country = $country_list[$country];
+        }
+
+        $address = get_post_meta($post_id, 'store_address', 1) . ', ' . get_post_meta($post_id, 'store_zip', 1) . ' ' . get_post_meta($post_id, 'store_city', 1) . ', ' . $country;
 
         $details = $this->geocode_address($address);
 

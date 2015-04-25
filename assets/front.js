@@ -1,10 +1,10 @@
 var wpustorelocator = {},
-    wpustorelocator_map = false;
-wpustorelocator_mapel = false;
+    wpustorelocator_map = false,
+    wpustorelocator_mapel = false;
 
-google.maps.event.addDomListener(window, 'load', initialize);
+google.maps.event.addDomListener(window, 'load', wpustorelocator_initialize);
 
-function initialize() {
+function wpustorelocator_initialize() {
     wpustorelocator_mapel = jQuery('#wpustorelocator-map');
     if (wpustorelocator_mapel.length < 1) {
         return;
@@ -12,35 +12,51 @@ function initialize() {
     wpustorelocator.loadmap();
     wpustorelocator.loadsearch();
     wpustorelocator.setgeolocalize();
+    wpustorelocator.countryswitch();
 }
+
+/* ----------------------------------------------------------
+  Switch country
+---------------------------------------------------------- */
+
+wpustorelocator.countryswitch = function() {
+    jQuery('#wpustorelocator-country').on('change', function(e){
+        var coords = jQuery(this).val().split('|');
+        var latlng = new google.maps.LatLng(coords[0], coords[1]);
+        wpustorelocator_map.setZoom(6);
+        wpustorelocator_map.panTo(latlng);
+    });
+};
 
 /* ----------------------------------------------------------
   Geolocalize
 ---------------------------------------------------------- */
 
-wpustorelocator.setgeolocalize = function(){
+wpustorelocator.setgeolocalize = function() {
     var $geolocbutton = jQuery('#wpustorelocator-geolocalize');
-    if($geolocbutton.length < 1){
+    if ($geolocbutton.length < 1) {
         return;
     }
 
-    if(!navigator.hasOwnProperty('geolocation')){
+    if (!navigator.hasOwnProperty('geolocation')) {
         $geolocbutton.destroy();
     }
 
-    $geolocbutton.on('click', function(e){
+    $geolocbutton.on('click', function(e) {
         e.preventDefault();
+        var coords = coords;
         navigator.geolocation.getCurrentPosition(wpustorelocator.setgeoposition);
     });
+};
 
-}
-
-wpustorelocator.setgeoposition = function(pos){
+wpustorelocator.setgeoposition = function(pos) {
     var latlng = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
     wpustorelocator_map.setZoom(12);
     wpustorelocator_map.panTo(latlng);
+    jQuery('#wpustorelocator-search-address').val(pos.coords.latitude + ', ' + pos.coords.longitude);
+    jQuery('#wpustorelocator-search-lat').val(pos.coords.latitude);
+    jQuery('#wpustorelocator-search-lng').val(pos.coords.longitude);
 };
-
 
 /* ----------------------------------------------------------
   Load map
@@ -49,14 +65,15 @@ wpustorelocator.setgeoposition = function(pos){
 wpustorelocator.loadmap = function(map) {
     var opt = {
         center: {
-            lat: 48.85,
+            lat: 46.85,
             lng: 2.35
         },
-        zoom: 5
+        zoom: 6
     };
 
     var attr_lat = wpustorelocator_mapel.attr('data-lat'),
         attr_lng = wpustorelocator_mapel.attr('data-lng'),
+        attr_radius = wpustorelocator_mapel.attr('data-radius'),
         attr_zoom = wpustorelocator_mapel.attr('data-zoom');
 
     if (attr_lat) {
@@ -64,6 +81,9 @@ wpustorelocator.loadmap = function(map) {
     }
     if (attr_lng) {
         opt.center.lng = parseFloat(attr_lng);
+    }
+    if (attr_radius) {
+        opt.zoom = wpustorelocator.radiusToZoom(parseInt(attr_radius, 10));
     }
     if (attr_zoom) {
         opt.zoom = parseInt(attr_zoom, 10);
@@ -77,6 +97,10 @@ wpustorelocator.loadmap = function(map) {
     }
 };
 
+wpustorelocator.radiusToZoom = function(radius) {
+    return Math.round(14 - Math.log(radius) / Math.LN2);
+};
+
 /* ----------------------------------------------------------
   Create a marker
 ---------------------------------------------------------- */
@@ -85,6 +109,7 @@ wpustorelocator.setmarker = function(item) {
     var marker = new google.maps.Marker({
         position: new google.maps.LatLng(item.lat, item.lng),
         map: wpustorelocator_map,
+        icon: window.wpustorelocatorconf.icon,
         title: item.name
     });
     var infowindow = new google.maps.InfoWindow({
@@ -92,6 +117,8 @@ wpustorelocator.setmarker = function(item) {
     });
     google.maps.event.addListener(marker, 'click', function() {
         infowindow.open(wpustorelocator_map, marker);
+        wpustorelocator_map.setZoom(15);
+        wpustorelocator_map.setCenter(marker.getPosition());
     });
 };
 
