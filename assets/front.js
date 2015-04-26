@@ -20,7 +20,7 @@ function wpustorelocator_initialize() {
 ---------------------------------------------------------- */
 
 wpustorelocator.countryswitch = function() {
-    jQuery('#wpustorelocator-country').on('change', function(e){
+    jQuery('#wpustorelocator-country').on('change', function(e) {
         var coords = jQuery(this).val().split('|');
         var latlng = new google.maps.LatLng(coords[0], coords[1]);
         wpustorelocator_map.setZoom(6);
@@ -50,12 +50,7 @@ wpustorelocator.setgeolocalize = function() {
 };
 
 wpustorelocator.setgeoposition = function(pos) {
-    var latlng = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-    wpustorelocator_map.setZoom(12);
-    wpustorelocator_map.panTo(latlng);
-    jQuery('#wpustorelocator-search-address').val(pos.coords.latitude + ', ' + pos.coords.longitude);
-    jQuery('#wpustorelocator-search-lat').val(pos.coords.latitude);
-    jQuery('#wpustorelocator-search-lng').val(pos.coords.longitude);
+    window.location.href = window.wpustorelocatorconf.base_url + '?lat=' + pos.coords.latitude + '&lng=' + pos.coords.longitude;
 };
 
 /* ----------------------------------------------------------
@@ -98,7 +93,7 @@ wpustorelocator.loadmap = function(map) {
 };
 
 wpustorelocator.radiusToZoom = function(radius) {
-    return Math.round(14 - Math.log(radius) / Math.LN2);
+    return Math.round(15 - Math.log(radius) / Math.LN2);
 };
 
 /* ----------------------------------------------------------

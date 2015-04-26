@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.4
+Version: 0.5
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -59,17 +59,15 @@ class WPUStoreLocator {
     }
 
     function display_infos() {
-        if (!is_post_type_archive('stores') || !is_singular('stores')) {
-
-            //return;
-
-
+        if (!is_post_type_archive('stores') && !is_singular('stores')) {
+            return;
         }
-        $infos = array(
-            'icon' => apply_filters('wpustorelocator_iconurl', '')
+        $this->infos = array(
+            'icon' => apply_filters('wpustorelocator_iconurl', ''),
+            'base_url' => get_post_type_archive_link('stores'),
         );
 
-        echo '<script>window.wpustorelocatorconf=' . json_encode($infos) . ';</script>';
+        echo '<script>window.wpustorelocatorconf=' . json_encode($this->infos) . ';</script>';
     }
 
     function load_languages() {
@@ -411,16 +409,38 @@ class WPUStoreLocator {
         return $return;
     }
 
-    function get_default_switch_country(){
+    function get_default_switch_country() {
         $return = '';
         $countries = $this->get_stores_countries();
         if (!empty($countries)) {
-            $return .= '<select id="wpustorelocator-country" name="country">';
+            $return.= '<select id="wpustorelocator-country" name="country">';
+            $return.= '<option selected disabled>' . __('Select a country', 'wpustorelocator') . '</option>';
             foreach ($countries as $country) {
-                $return .= '<option value="'.$country['lat'].'|'.$country['lng'].'">'.$country['name'].'</option>';
+                $return.= '<option value="' . $country['lat'] . '|' . $country['lng'] . '">' . $country['name'] . '</option>';
             }
-            $return .= '</select>';
+            $return.= '</select>';
         }
+        return $return;
+    }
+
+    function get_default_extend_radius() {
+        $return = '';
+
+        $radius_list = $this->get_radius();
+        unset($radius_list[0]);
+
+        $search = $this->get_search_parameters($_GET);
+
+        $return.= '<ul>';
+        foreach ($radius_list as $radius) {
+            $url = add_query_arg(array(
+                'lat' => $search['lat'],
+                'lng' => $search['lng'],
+                'radius' => $radius,
+            ) , get_post_type_archive_link('stores'));
+            $return.= '<li><a href="' . $url . '">' . sprintf(__('Extend search to %s km', 'wpustorelocator') , $radius) . '</a></li>';
+        }
+        $return.= '</ul>';
         return $return;
     }
 
