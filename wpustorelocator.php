@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.5
+Version: 0.5.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,10 +12,14 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.3';
+    private $script_version = '0.5.1';
     function __construct() {
 
         global $wpdb;
+        $this->options = array(
+            'id' => 'wpustorelocator',
+            'level' => 'manage_options',
+        );
         $this->table_name = $wpdb->prefix . 'wpustorelocatorlist';
         $this->serverapi_key = get_option('wpustorelocator_serverapikey');
         $this->frontapi_key = get_option('wpustorelocator_frontapikey');
@@ -63,8 +67,8 @@ class WPUStoreLocator {
             return;
         }
         $this->infos = array(
-            'icon' => apply_filters('wpustorelocator_iconurl', ''),
-            'base_url' => get_post_type_archive_link('stores'),
+            'icon' => apply_filters('wpustorelocator_iconurl', '') ,
+            'base_url' => get_post_type_archive_link('stores') ,
         );
 
         echo '<script>window.wpustorelocatorconf=' . json_encode($this->infos) . ';</script>';
@@ -85,7 +89,12 @@ class WPUStoreLocator {
                 'jquery'
             ) , $this->script_version, true);
         }
-        wp_enqueue_script('wpustorelocator-maps', 'http://maps.googleapis.com/maps/api/js?libraries=places&key=' . $this->frontapi_key . '&sensor=false', false, '3');
+        $lang = explode('_', get_locale());
+        $mainlang = '';
+        if (isset($lang[0])) {
+            $mainlang = $lang[0];
+        }
+        wp_enqueue_script('wpustorelocator-maps', 'http://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places&key=' . $this->frontapi_key . '&language=' . $mainlang . '&sensor=false', false, '3');
     }
 
     /* ----------------------------------------------------------
@@ -315,7 +324,7 @@ class WPUStoreLocator {
 
     function get_countries($full = false) {
         $csv = array_map('str_getcsv', file(dirname(__FILE__) . '/inc/countries.csv'));
-
+        $locale = get_locale();
         $countries = array();
         foreach ($csv as $country) {
             $value = $country[3];
@@ -325,6 +334,9 @@ class WPUStoreLocator {
                     'lng' => $country[2],
                     'name' => $country[3]
                 );
+                if ($locale == 'fr_FR') {
+                    $value['name'] = $country[4];
+                }
             }
             $countries[$country[0]] = $value;
         }
