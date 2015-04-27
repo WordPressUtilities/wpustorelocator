@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.5.1
+Version: 0.5.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.5.1';
+    private $script_version = '0.5.2';
     function __construct() {
 
         global $wpdb;
@@ -60,6 +60,17 @@ class WPUStoreLocator {
         add_action('plugins_loaded', array(&$this,
             'load_languages'
         ));
+        add_action('template_redirect', array(&$this,
+            'prevent_single'
+        ));
+    }
+
+    function prevent_single() {
+        $prevent_single = apply_filters('wpustorelocator_preventsingle', false);
+        if (is_singular('stores') && $prevent_single) {
+            wp_redirect(get_post_type_archive_link('stores'));
+            die;
+        }
     }
 
     function display_infos() {
@@ -360,6 +371,7 @@ class WPUStoreLocator {
     ---------------------------------------------------------- */
 
     function get_json_from_storelist($stores) {
+        $prevent_single = apply_filters('wpustorelocator_preventsingle', false);
         $datas = array();
         foreach ($stores as $store) {
 
@@ -370,6 +382,10 @@ class WPUStoreLocator {
                 'address' => $this->get_address_from_store($store) ,
                 'link' => '<a class="store-link" href="' . get_permalink($store['post']->ID) . '">' . __('View this store', 'wpustorelocator') . '</a>',
             );
+
+            if ($prevent_single) {
+                $data['link'] = '';
+            }
 
             $datas[] = $data;
         }
