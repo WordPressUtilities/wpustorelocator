@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.5.3
+Version: 0.5.3.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.5.3';
+    private $script_version = '0.5.3.1';
     function __construct() {
 
         global $wpdb;
@@ -483,6 +483,7 @@ class WPUStoreLocator {
         switch ($type) {
             case 'select':
                 $return.= '<select name="" onchange="window.location.href=this.value;return false;">';
+                $return.= '<option selected disabled>' . __('Extend search to ...', 'wpustorelocator') . '</option>';
                 foreach ($radius_values as $rad) {
                     $return.= '<option value="' . $rad['url'] . '">' . $rad['name'] . '</option>';
                 }
