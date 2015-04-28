@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.5.2
+Version: 0.5.3
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.5.2';
+    private $script_version = '0.5.3';
     function __construct() {
 
         global $wpdb;
@@ -451,24 +451,51 @@ class WPUStoreLocator {
         return $return;
     }
 
-    function get_default_extend_radius() {
+    function get_default_extend_radius($type = 'link') {
         $return = '';
 
         $radius_list = $this->get_radius();
         unset($radius_list[0]);
 
+        $current_radius = 0;
+        if (isset($_GET['radius']) && in_array($_GET['radius'], $radius_list)) {
+            $current_radius = $_GET['radius'];
+        }
+
         $search = $this->get_search_parameters($_GET);
 
-        $return.= '<ul>';
+        $radius_values = array();
+
         foreach ($radius_list as $radius) {
+            if ($radius <= $current_radius) {
+                continue;
+            }
             $url = add_query_arg(array(
                 'lat' => $search['lat'],
                 'lng' => $search['lng'],
                 'radius' => $radius,
             ) , get_post_type_archive_link('stores'));
-            $return.= '<li><a href="' . $url . '">' . sprintf(__('Extend search to %s km', 'wpustorelocator') , $radius) . '</a></li>';
+            $radius_values[] = array(
+                'url' => $url,
+                'name' => sprintf(__('Extend search to %s km', 'wpustorelocator') , $radius)
+            );
         }
-        $return.= '</ul>';
+        switch ($type) {
+            case 'select':
+                $return.= '<select name="" onchange="window.location.href=this.value;return false;">';
+                foreach ($radius_values as $rad) {
+                    $return.= '<option value="' . $rad['url'] . '">' . $rad['name'] . '</option>';
+                }
+                $return.= '</select>';
+            break;
+            default:
+                $return.= '<ul>';
+                foreach ($radius_values as $rad) {
+                    $return.= '<li><a href="' . $rad['url'] . '">' . $rad['name'] . '</a></li>';
+                }
+                $return.= '</ul>';
+        }
+
         return $return;
     }
 

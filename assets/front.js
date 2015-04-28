@@ -128,10 +128,14 @@ wpustorelocator.loadsearch = function() {
     }
     var autocomplete = new google.maps.places.Autocomplete(input);
     jQuery(input).keypress(function(e) {
+        var $this = jQuery(this);
         if (e.which == 13) {
             google.maps.event.trigger(autocomplete, 'place_changed');
             if (!jQuery('#wpustorelocator-search-lat').val()) {
                 e.preventDefault();
+                setTimeout(function(){
+                    $this.closest('form').submit();
+                },200);
             }
         }
     });
