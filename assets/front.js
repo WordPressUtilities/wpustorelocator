@@ -38,8 +38,8 @@ wpustorelocator.setgeolocalize = function() {
         return;
     }
 
-    if (!navigator.hasOwnProperty('geolocation')) {
-        $geolocbutton.destroy();
+    if (!"geolocation" in navigator) {
+        $geolocbutton.remove();
     }
 
     $geolocbutton.on('click', function(e) {

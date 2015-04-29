@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.6
+Version: 0.6.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.6';
+    private $script_version = '0.6.1';
     function __construct() {
 
         global $wpdb;
@@ -506,7 +506,7 @@ class WPUStoreLocator {
         $radius_values = array();
 
         foreach ($radius_list as $radius) {
-            if ($radius <= $current_radius) {
+            if ($radius < $current_radius) {
                 continue;
             }
             $url = add_query_arg(array(
@@ -515,6 +515,7 @@ class WPUStoreLocator {
                 'radius' => $radius,
             ) , get_post_type_archive_link('stores'));
             $radius_values[] = array(
+                'value' => $radius,
                 'url' => $url,
                 'name' => sprintf(__('Extend search to %s km', 'wpustorelocator') , $radius)
             );
@@ -522,7 +523,9 @@ class WPUStoreLocator {
         switch ($type) {
             case 'select':
                 $return.= '<select name="" onchange="window.location.href=this.value;return false;">';
-                $return.= '<option selected disabled>' . __('Extend search to ...', 'wpustorelocator') . '</option>';
+                if (count($radius_values) == 1) {
+                    $return.= '<option selected disabled>' . __('Extend search to ...', 'wpustorelocator') . '</option>';
+                }
                 foreach ($radius_values as $rad) {
                     $return.= '<option value="' . $rad['url'] . '">' . $rad['name'] . '</option>';
                 }
@@ -531,6 +534,9 @@ class WPUStoreLocator {
             default:
                 $return.= '<ul>';
                 foreach ($radius_values as $rad) {
+                    if ($rad['value'] <= $current_radius) {
+                        continue;
+                    }
                     $return.= '<li><a href="' . $rad['url'] . '">' . $rad['name'] . '</a></li>';
                 }
                 $return.= '</ul>';
@@ -578,6 +584,7 @@ class WPUStoreLocator {
 
             // If replace
             if (isset($_POST['replace'])) {
+
                 // Delete all
                 $this->admin__delete_all_stores();
             }
@@ -592,16 +599,12 @@ class WPUStoreLocator {
                 if (is_numeric($store_id)) {
                     $inserted_stores++;
                 }
-                if($inserted_stores >= $max_store_nb){
+                if ($inserted_stores >= $max_store_nb) {
                     break;
                 }
             }
         }
-
-
     }
-
-
 
     function create_store_from_array($store) {
 
@@ -669,13 +672,13 @@ class WPUStoreLocator {
         $location_query = get_posts(array(
             'post_type' => 'stores',
             'post_status' => 'any',
-            'posts_per_page' => -1,
+            'posts_per_page' => - 1,
             'suppress_filters' => true
         ));
 
         // Sort stores
         foreach ($location_query as $store) {
-            wp_delete_post($store->ID,1);
+            wp_delete_post($store->ID, 1);
         }
     }
 
