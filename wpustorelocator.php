@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.5.3.1
+Version: 0.6
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.5.3.1';
+    private $script_version = '0.6';
     function __construct() {
 
         global $wpdb;
@@ -23,6 +23,27 @@ class WPUStoreLocator {
         $this->table_name = $wpdb->prefix . 'wpustorelocatorlist';
         $this->serverapi_key = get_option('wpustorelocator_serverapikey');
         $this->frontapi_key = get_option('wpustorelocator_frontapikey');
+
+        $pages = array(
+            'admin' => array(
+                'name' => 'Store options',
+                'function_content' => array(&$this,
+                    'admin_options'
+                ) ,
+                'function_action' => array(&$this,
+                    'admin_options_postAction'
+                ) ,
+                'has_file' => true
+            )
+        );
+
+        if (is_admin()) {
+
+            if (!class_exists('WPUBaseAdminPage')) {
+                include dirname(__FILE__) . '/inc/class-WPUBaseAdminPage.php';
+            }
+            new WPUBaseAdminPage($this, $pages);
+        }
 
         add_filter('wputh_get_posttypes', array(&$this,
             'set_theme_posttypes'
@@ -213,11 +234,19 @@ class WPUStoreLocator {
             'box' => 'stores_details',
             'name' => __('Email address', 'wpustorelocator')
         );
-
-        $fields['store_openingtime'] = array(
+        $fields['store_openinghours'] = array(
             'box' => 'stores_details',
             'name' => __('Opening time', 'wpustorelocator') ,
-            'type' => 'textarea'
+            'type' => 'table',
+            'columns' => array(
+                'day' => array(
+                    'name' => 'Jour'
+                ) ,
+                'time' => array(
+                    'name' => 'Heures'
+                ) ,
+            ) ,
+            'lang' => 1
         );
         $fields['store_phone'] = array(
             'box' => 'stores_details',
@@ -277,6 +306,7 @@ class WPUStoreLocator {
         // Execute the query
         $location_query = get_posts(array(
             'post_type' => 'stores',
+            'posts_per_page' => 100,
             'suppress_filters' => true
         ));
 
@@ -334,6 +364,11 @@ class WPUStoreLocator {
     }
 
     function get_countries($full = false) {
+        $is_full = $full ? '1' : '0';
+        if (isset($this->countries[$is_full])) {
+            return $this->countries[$is_full];
+        }
+
         $csv = array_map('str_getcsv', file(dirname(__FILE__) . '/inc/countries.csv'));
         $locale = get_locale();
         $countries = array();
@@ -343,7 +378,9 @@ class WPUStoreLocator {
                 $value = array(
                     'lat' => $country[1],
                     'lng' => $country[2],
-                    'name' => $country[3]
+                    'name' => $country[3],
+                    'name_orig' => $country[3],
+                    'name_fr' => $country[4],
                 );
                 if ($locale == 'fr_FR') {
                     $value['name'] = $country[4];
@@ -351,6 +388,8 @@ class WPUStoreLocator {
             }
             $countries[$country[0]] = $value;
         }
+        $this->countries[$is_full] = $countries;
+
         return $countries;
     }
 
@@ -515,6 +554,131 @@ class WPUStoreLocator {
         echo '<p><input id="wpustorelocator-admingeocoding-content" type="text" name="_geocoding" class="widefat" value="" /></p>';
     }
 
+    function admin_options() {
+
+        // Download model
+        echo '<p><label><strong>' . __('Store list file (.csv)', 'wpustorelocator') . '</strong></label><br /><input type="file" name="file" value="" /><br /><small><strong>Format :</strong> Store name;Address;Address #2;Zipcode;City;Etat/Province/Comté;Country;Telephone</small></p>';
+
+        // Destroy ?
+        echo '<p><label><input checked="checked" type="checkbox" name="replace" value="" /> ' . __('Replace the previous stores', 'wpustorelocator') . '</label></p>';
+
+        // Geoloc some posts
+        echo '<p><label><input type="checkbox" name="geoloc" value="" /> ' . __('Geoloc stores', 'wpustorelocator') . '</label></p>';
+
+        // upload input and destroy
+        echo submit_button('Import');
+    }
+
+    function admin_options_postAction() {
+
+        $max_store_nb = 500;
+
+        // If file exists & valid
+        if (isset($_FILES, $_FILES['file'], $_FILES['file']['tmp_name']) && !empty($_FILES['file']['tmp_name']) && stripos($_FILES['file']['type'], 'csv')) {
+
+            // If replace
+            if (isset($_POST['replace'])) {
+                // Delete all
+                $this->admin__delete_all_stores();
+            }
+
+            // Extract list
+            $stores_list = $this->get_array_from_csv($_FILES['file']['tmp_name']);
+
+            // - Insert new
+            $inserted_stores = 0;
+            foreach ($stores_list as $store) {
+                $store_id = $this->create_store_from_array($store);
+                if (is_numeric($store_id)) {
+                    $inserted_stores++;
+                }
+                if($inserted_stores >= $max_store_nb){
+                    break;
+                }
+            }
+        }
+
+
+    }
+
+
+
+    function create_store_from_array($store) {
+
+        $countries = $this->get_countries(1);
+        $store_lat = '';
+        $store_lng = '';
+        $country_code = '';
+
+        // Set country settings if name recognized
+        foreach ($countries as $id => $country) {
+            $names = array(
+                $country['name_orig'],
+                $country['name_fr']
+            );
+            if (in_array($store[6], $names)) {
+                $country_code = $id;
+                $store_lat = $country['lat'];
+                $store_lng = $country['lng'];
+            }
+        }
+
+        // Create post
+        $store_id = wp_insert_post(array(
+            'post_title' => $store[0],
+            'post_status' => 'publish',
+            'post_type' => 'stores',
+        ));
+
+        if (is_numeric($store_id)) {
+            update_post_meta($store_id, 'store_name', $store[0]);
+            update_post_meta($store_id, 'store_address', $store[1]);
+            update_post_meta($store_id, 'store_address2', $store[2]);
+            update_post_meta($store_id, 'store_zip', $store[3]);
+            update_post_meta($store_id, 'store_city', $store[4]);
+            update_post_meta($store_id, 'store_region', $store[5]);
+            update_post_meta($store_id, 'store_country', $country_code);
+            update_post_meta($store_id, 'store_phone', $store[7]);
+            update_post_meta($store_id, 'store_defaultlat', '1');
+            update_post_meta($store_id, 'store_lat', $store_lat);
+            update_post_meta($store_id, 'store_lng', $store_lng);
+
+            return $store_id;
+        }
+
+        return false;
+    }
+
+    function get_array_from_csv($csv_file) {
+        $list = array();
+        $row = 1;
+        if (($handle = fopen($csv_file, "r")) !== FALSE) {
+            while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+                if ($data[1] != 'Address') {
+                    $list[] = $data;
+                }
+            }
+            fclose($handle);
+        }
+        return $list;
+    }
+
+    function admin__delete_all_stores() {
+
+        // Execute the query
+        $location_query = get_posts(array(
+            'post_type' => 'stores',
+            'post_status' => 'any',
+            'posts_per_page' => -1,
+            'suppress_filters' => true
+        ));
+
+        // Sort stores
+        foreach ($location_query as $store) {
+            wp_delete_post($store->ID,1);
+        }
+    }
+
     /* ----------------------------------------------------------
       Search
     ---------------------------------------------------------- */
@@ -588,6 +752,7 @@ class WPUStoreLocator {
         $details = $this->geocode_address($address);
 
         if ($details != $default_details) {
+            update_post_meta($post_id, 'store_defaultlat', '0');
             update_post_meta($post_id, 'store_lat', $details['lat']);
             update_post_meta($post_id, 'store_lng', $details['lng']);
             return true;
