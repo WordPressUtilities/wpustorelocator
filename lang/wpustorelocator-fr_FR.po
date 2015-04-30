@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2015-04-29 00:04+0100\n"
+"POT-Creation-Date: 2015-04-30 23:55+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -15,118 +15,142 @@ msgstr ""
 "X-Poedit-KeywordsList: __;_e;_n\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././wpustorelocator.php:138
+#: .././wpustorelocator.php:120
+#, php-format
+msgid "The plugin %s should be installed."
+msgstr "Le plugin %s devrait être installé."
+
+#: .././wpustorelocator.php:175
 msgid "Store"
 msgstr "Boutique"
 
-#: .././wpustorelocator.php:139
+#: .././wpustorelocator.php:176
 msgid "Stores"
 msgstr "Boutiques"
 
-#: .././wpustorelocator.php:176
+#: .././wpustorelocator.php:213
 msgid "Radius list"
 msgstr "Liste des distances"
 
-#: .././wpustorelocator.php:183
+#: .././wpustorelocator.php:220
 msgid "Server API Key"
 msgstr "Clef API Server"
 
-#: .././wpustorelocator.php:187
+#: .././wpustorelocator.php:224
 msgid "Front API Key"
 msgstr "Clef API Front"
 
-#: .././wpustorelocator.php:202
+#: .././wpustorelocator.php:239
 msgid "Details"
 msgstr "Détails"
 
-#: .././wpustorelocator.php:208
+#: .././wpustorelocator.php:245
 msgid "Localization"
 msgstr "Localisation"
 
-#: .././wpustorelocator.php:214
+#: .././wpustorelocator.php:251
 msgid "Map position"
 msgstr "Position de la carte"
 
-#: .././wpustorelocator.php:230
+#: .././wpustorelocator.php:267
 msgid "Name"
 msgstr "Nom"
 
-#: .././wpustorelocator.php:234
+#: .././wpustorelocator.php:271
 msgid "Email address"
 msgstr "Adresse email"
 
-#: .././wpustorelocator.php:239
+#: .././wpustorelocator.php:275
 msgid "Opening time"
 msgstr "Horaires d'ouverture"
 
-#: .././wpustorelocator.php:244
+#: .././wpustorelocator.php:289
 msgid "Phone number"
 msgstr "Numéro de téléphone"
 
-#: .././wpustorelocator.php:250
+#: .././wpustorelocator.php:295
 msgid "Address"
 msgstr "Adresse"
 
-#: .././wpustorelocator.php:254
+#: .././wpustorelocator.php:299
 msgid "Address2"
 msgstr "Adresse2"
 
-#: .././wpustorelocator.php:258
+#: .././wpustorelocator.php:303
 msgid "Zip code"
 msgstr "Code postal"
 
-#: .././wpustorelocator.php:262
+#: .././wpustorelocator.php:307
 msgid "City"
 msgstr "Ville"
 
-#: .././wpustorelocator.php:266
+#: .././wpustorelocator.php:311
 msgid "Region"
 msgstr "Région"
 
-#: .././wpustorelocator.php:270
+#: .././wpustorelocator.php:315
 msgid "Country"
 msgstr "Pays"
 
-#: .././wpustorelocator.php:278
+#: .././wpustorelocator.php:323
 msgid "Latitude"
 msgstr "Latitude"
 
-#: .././wpustorelocator.php:282
+#: .././wpustorelocator.php:327
 msgid "Longitude"
 msgstr "Longitude"
 
-#: .././wpustorelocator.php:286
+#: .././wpustorelocator.php:331
 msgid "Zoom"
 msgstr "Zoom"
 
-#: .././wpustorelocator.php:403
+#: .././wpustorelocator.php:458
 msgid "View this store"
 msgstr "Voir cette boutique"
 
-#: .././wpustorelocator.php:465
+#: .././wpustorelocator.php:520
 msgid "Select a country"
 msgstr "Sélectionner un pays"
 
-#: .././wpustorelocator.php:500
+#: .././wpustorelocator.php:556
 #, php-format
 msgid "Extend search to %s km"
 msgstr "Etendre la recherche à %s km"
 
-#: .././wpustorelocator.php:506
+#: .././wpustorelocator.php:563
 msgid "Extend search to ..."
 msgstr "Étendre la recherche à..."
 
-#: .././wpustorelocator.php:528
+#: .././wpustorelocator.php:589
 msgid "Geocoding"
 msgstr "Géocodage"
 
-#: .././wpustorelocator.php:534
+#: .././wpustorelocator.php:595
 msgid ""
 "Please type and select the address below and validate by pressing the Enter "
 "button to update GPS Coordinates"
 msgstr ""
 "Veuillez taper et sélectionner l'adresse ci-dessous et validez en appuyant "
 "sur la touche Entrée pour mettre à jour les coordonnées GPS"
+
+#: .././wpustorelocator.php:602
+msgid "Store list file (.csv)"
+msgstr "Fichier liste des magasins ( .csv)"
+
+#: .././wpustorelocator.php:605
+msgid "Replace the previous stores"
+msgstr "Remplacer les magasins précédents"
+
+#: .././wpustorelocator.php:608
+msgid "Geoloc stores"
+msgstr "Geoloc magasins"
+
+#: .././wpustorelocator.php:643
+msgid "1 store has been imported."
+msgstr "1 magasin a été importé."
+
+#~ msgid "1 post has been imported."
+#~ msgstr "1 poste a été importé."
 
 #~ msgid "Select a value"
 #~ msgstr "Sélectionner"

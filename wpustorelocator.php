@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.6.1
+Version: 0.6.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,11 +12,19 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.6.1';
+    private $script_version = '0.6.2';
+
+    private $notices_categories = array(
+        'updated',
+        'update-nag',
+        'error'
+    );
+
     function __construct() {
 
         global $wpdb;
         $this->options = array(
+            'name' => 'WPU Store locator',
             'id' => 'wpustorelocator',
             'level' => 'manage_options',
         );
@@ -44,7 +52,9 @@ class WPUStoreLocator {
             }
             new WPUBaseAdminPage($this, $pages);
         }
-
+        add_action('init', array(&$this,
+            'check_dependencies'
+        ));
         add_filter('wputh_get_posttypes', array(&$this,
             'set_theme_posttypes'
         ));
@@ -84,6 +94,43 @@ class WPUStoreLocator {
         add_action('template_redirect', array(&$this,
             'prevent_single'
         ));
+
+        // Display notices
+        add_action('admin_notices', array(&$this,
+            'admin_notices'
+        ));
+    }
+
+    function check_dependencies() {
+        if (!is_admin()) {
+            return;
+        }
+        include_once (ABSPATH . 'wp-admin/includes/plugin.php');
+
+        // Check for Plugins activation
+        $this->plugins = array(
+            'wpuoptions' => array(
+                'installed' => true,
+                'path' => 'wpuoptions/wpuoptions.php',
+                'message_url' => '<a target="_blank" href="https://github.com/WordPressUtilities/wpuoptions">WPU Options</a>',
+            ),
+            'wpupostmetas' => array(
+                'installed' => true,
+                'path' => 'wpupostmetas/wpupostmetas.php',
+                'message_url' => '<a target="_blank" href="https://github.com/WordPressUtilities/wpupostmetas">WPU Post metas</a>',
+            ),
+            'wpuposttypestaxos' => array(
+                'installed' => true,
+                'path' => 'wpuposttypestaxos/wpuposttypestaxos.php',
+                'message_url' => '<a target="_blank" href="https://github.com/WordPressUtilities/wpuposttypestaxos">WPU Post types & taxonomies</a>',
+            )
+        );
+        foreach ($this->plugins as $id => $plugin) {
+            if (!is_plugin_active($plugin['path'])) {
+                $this->plugins[$id]['installed'] = false;
+                $this->set_message($id . '__not_installed', $this->options['name'].': '.sprintf(__('The plugin %s should be installed.', 'wpustorelocator') , $plugin['message_url']) , 'error');
+            }
+        }
     }
 
     function prevent_single() {
@@ -603,6 +650,9 @@ class WPUStoreLocator {
                     break;
                 }
             }
+            if ($inserted_stores > 0) {
+                $this->set_message('import_ok', sprintf(_n('1 store has been imported.', '%s stores has been imported.', $inserted_stores, 'wpustorelocator') , $inserted_stores) , 'updated');
+            }
         }
     }
 
@@ -830,6 +880,37 @@ class WPUStoreLocator {
 
         require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
+    }
+
+    /* ----------------------------------------------------------
+      Set messages
+    ---------------------------------------------------------- */
+
+    /* Set notices messages */
+    private function set_message($id, $message, $group = '') {
+        $messages = (array)get_transient($this->transient_msg);
+        if (!in_array($group, $this->notices_categories)) {
+            $group = $this->notices_categories[0];
+        }
+        $messages[$group][$id] = $message;
+        set_transient($this->transient_msg, $messages);
+    }
+
+    /* Display notices */
+    function admin_notices() {
+        $messages = (array)get_transient($this->transient_msg);
+        if (!empty($messages)) {
+            foreach ($messages as $group_id => $group) {
+                if (is_array($group)) {
+                    foreach ($group as $message) {
+                        echo '<div class="' . $group_id . '"><p>' . $message . '</p></div>';
+                    }
+                }
+            }
+        }
+
+        // Empty messages
+        delete_transient($this->transient_msg);
     }
 }
 
