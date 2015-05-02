@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.6.2
+Version: 0.6.3
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.6.2';
+    private $script_version = '0.6.3';
 
     private $notices_categories = array(
         'updated',
@@ -53,6 +53,9 @@ class WPUStoreLocator {
             new WPUBaseAdminPage($this, $pages);
         }
         add_action('init', array(&$this,
+            'init'
+        ));
+        add_action('init', array(&$this,
             'check_dependencies'
         ));
         add_filter('wputh_get_posttypes', array(&$this,
@@ -91,6 +94,9 @@ class WPUStoreLocator {
         add_action('plugins_loaded', array(&$this,
             'load_languages'
         ));
+        add_action('plugins_loaded', array(&$this,
+            'table_creation'
+        ));
         add_action('template_redirect', array(&$this,
             'prevent_single'
         ));
@@ -99,6 +105,14 @@ class WPUStoreLocator {
         add_action('admin_notices', array(&$this,
             'admin_notices'
         ));
+    }
+
+    function init() {
+
+        /* Transient */
+        global $current_user;
+        $this->transient_prefix = sanitize_title(basename(__FILE__)) . $current_user->ID;
+        $this->transient_msg = $this->transient_prefix . '__messages';
     }
 
     function check_dependencies() {
@@ -113,12 +127,12 @@ class WPUStoreLocator {
                 'installed' => true,
                 'path' => 'wpuoptions/wpuoptions.php',
                 'message_url' => '<a target="_blank" href="https://github.com/WordPressUtilities/wpuoptions">WPU Options</a>',
-            ),
+            ) ,
             'wpupostmetas' => array(
                 'installed' => true,
                 'path' => 'wpupostmetas/wpupostmetas.php',
                 'message_url' => '<a target="_blank" href="https://github.com/WordPressUtilities/wpupostmetas">WPU Post metas</a>',
-            ),
+            ) ,
             'wpuposttypestaxos' => array(
                 'installed' => true,
                 'path' => 'wpuposttypestaxos/wpuposttypestaxos.php',
@@ -128,7 +142,7 @@ class WPUStoreLocator {
         foreach ($this->plugins as $id => $plugin) {
             if (!is_plugin_active($plugin['path'])) {
                 $this->plugins[$id]['installed'] = false;
-                $this->set_message($id . '__not_installed', $this->options['name'].': '.sprintf(__('The plugin %s should be installed.', 'wpustorelocator') , $plugin['message_url']) , 'error');
+                $this->set_message($id . '__not_installed', $this->options['name'] . ': ' . sprintf(__('The plugin %s should be installed.', 'wpustorelocator') , $plugin['message_url']) , 'error');
             }
         }
     }
@@ -603,8 +617,9 @@ class WPUStoreLocator {
     }
 
     function render_box_geocoding() {
-        echo '<p><label for="wpustorelocator-admingeocoding-content">' . __('Please type and select the address below and validate by pressing the Enter button to update GPS Coordinates', 'wpustorelocator') . '</label></p>';
+        echo '<p><label for="wpustorelocator-admingeocoding-content">' . __('Please load the address below and click on a suggested result to update GPS Coordinates', 'wpustorelocator') . '</label></p>';
         echo '<p><input id="wpustorelocator-admingeocoding-content" type="text" name="_geocoding" class="widefat" value="" /></p>';
+        echo '<p><button type="button" id="wpustorelocator-admingeocoding-button">' . __('Load address', 'wpustorelocator') . '</button></p>';
     }
 
     function admin_options() {
@@ -846,12 +861,14 @@ class WPUStoreLocator {
             // We already have a lat lng for this post. Update row
             $wpdb->update($this->table_name, array(
                 'lat' => $_POST['store_lat'],
-                'lng' => $_POST['store_lng']
+                'lng' => $_POST['store_lng'],
+                'country' => $_POST['store_country']
             ) , array(
                 'post_id' => $post_id
             ) , array(
                 '%f',
-                '%f'
+                '%f',
+                '%s'
             ));
         }
         else {
@@ -860,26 +877,36 @@ class WPUStoreLocator {
             $wpdb->insert($this->table_name, array(
                 'post_id' => $post_id,
                 'lat' => $_POST['store_lat'],
-                'lng' => $_POST['store_lng']
+                'lng' => $_POST['store_lng'],
+                'country' => $_POST['store_country'],
             ) , array(
                 '%d',
                 '%f',
-                '%f'
+                '%f',
+                '%s',
             ));
         }
     }
 
     /* Create table */
     function table_creation() {
-
-        $sql = "CREATE TABLE IF NOT EXISTS `" . $this->table_name . "` (
-  `post_id` bigint(20) unsigned NOT NULL,
-  `lat` float NOT NULL,
-  `lng` float NOT NULL
-) ENGINE=InnoDB;  ";
+        if (!is_admin()) {
+            return;
+        }
+        $script_version = get_option('wpustorelocator_scriptversion');
+        if ($script_version == $this->script_version) {
+            return;
+        }
+        $sql = "CREATE TABLE " . $this->table_name . " (
+  post_id bigint(20) unsigned NOT NULL,
+  lat float NOT NULL,
+  lng float NOT NULL,
+  country varchar(50) DEFAULT ''
+);";
 
         require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
+        update_option('wpustorelocator_scriptversion', $this->script_version);
     }
 
     /* ----------------------------------------------------------
