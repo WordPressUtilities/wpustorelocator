@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.6.3
+Version: 0.6.4
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -109,10 +109,16 @@ class WPUStoreLocator {
 
     function init() {
 
+        $this->options['archive_url'] = apply_filters('wpustorelocator_archive_url', get_post_type_archive_link('stores'));
+
         /* Transient */
         global $current_user;
         $this->transient_prefix = sanitize_title(basename(__FILE__)) . $current_user->ID;
         $this->transient_msg = $this->transient_prefix . '__messages';
+    }
+
+    function is_storelocator_front(){
+        return apply_filters('wpustorelocator_is_storelocator_front', is_post_type_archive('stores'));
     }
 
     function check_dependencies() {
@@ -150,18 +156,18 @@ class WPUStoreLocator {
     function prevent_single() {
         $prevent_single = apply_filters('wpustorelocator_preventsingle', false);
         if (is_singular('stores') && $prevent_single) {
-            wp_redirect(get_post_type_archive_link('stores'));
+            wp_redirect($this->options['archive_url']);
             die;
         }
     }
 
     function display_infos() {
-        if (!is_post_type_archive('stores') && !is_singular('stores')) {
+        if (!$this->is_storelocator_front() && !is_singular('stores')) {
             return;
         }
         $this->infos = array(
             'icon' => apply_filters('wpustorelocator_iconurl', '') ,
-            'base_url' => get_post_type_archive_link('stores') ,
+            'base_url' => $this->options['archive_url'] ,
         );
 
         echo '<script>window.wpustorelocatorconf=' . json_encode($this->infos) . ';</script>';
@@ -172,7 +178,7 @@ class WPUStoreLocator {
     }
 
     function enqueue_scripts() {
-        if (is_post_type_archive('stores') || is_singular('stores')) {
+        if ($this->is_storelocator_front() || is_singular('stores')) {
             wp_enqueue_script('wpustorelocator-front', plugins_url('/assets/front.js', __FILE__) , array(
                 'jquery'
             ) , $this->script_version, true);
@@ -574,7 +580,7 @@ class WPUStoreLocator {
                 'lat' => $search['lat'],
                 'lng' => $search['lng'],
                 'radius' => $radius,
-            ) , get_post_type_archive_link('stores'));
+            ) , $this->options['archive_url']);
             $radius_values[] = array(
                 'value' => $radius,
                 'url' => $url,
