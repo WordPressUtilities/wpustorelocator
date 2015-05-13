@@ -21,9 +21,13 @@ function wpustorelocator_initialize() {
 
 wpustorelocator.countryswitch = function() {
     jQuery('#wpustorelocator-country').on('change', function(e) {
-        var coords = jQuery(this).val().split('|');
-        var latlng = new google.maps.LatLng(coords[0], coords[1]);
-        wpustorelocator_map.setZoom(6);
+        var coords = jQuery(this).find(":selected").attr('data-latlng').split('|'),
+            zoom = 6,
+            latlng = new google.maps.LatLng(coords[0], coords[1]);
+        if (coords[2]) {
+            zoom = parseInt(coords[2], 10);
+        }
+        wpustorelocator_map.setZoom(zoom);
         wpustorelocator_map.panTo(latlng);
     });
 };
@@ -50,7 +54,10 @@ wpustorelocator.setgeolocalize = function() {
 };
 
 wpustorelocator.setgeoposition = function(pos) {
-    window.location.href = window.wpustorelocatorconf.base_url + '?lat=' + pos.coords.latitude + '&lng=' + pos.coords.longitude;
+    window.location.href = window.wpustorelocatorconf.base_url +
+        '?lat=' + pos.coords.latitude +
+        '&lng=' + pos.coords.longitude +
+        '&country=' + jQuery('#wpustorelocator-country').val();
 };
 
 /* ----------------------------------------------------------
@@ -107,8 +114,12 @@ wpustorelocator.setmarker = function(item) {
         icon: window.wpustorelocatorconf.icon,
         title: item.name
     });
+    var content = item.address + item.link;
+    if(item.itinerary){
+        content += item.itinerary;
+    }
     var infowindow = new google.maps.InfoWindow({
-        content: item.address + item.link
+        content: content
     });
     google.maps.event.addListener(marker, 'click', function() {
         infowindow.open(wpustorelocator_map, marker);
@@ -133,9 +144,9 @@ wpustorelocator.loadsearch = function() {
             google.maps.event.trigger(autocomplete, 'place_changed');
             if (!jQuery('#wpustorelocator-search-lat').val()) {
                 e.preventDefault();
-                setTimeout(function(){
+                setTimeout(function() {
                     $this.closest('form').submit();
-                },200);
+                }, 200);
             }
         }
     });
