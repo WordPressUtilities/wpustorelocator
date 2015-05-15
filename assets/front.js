@@ -146,15 +146,15 @@ wpustorelocator.loadsearch = function() {
                 e.preventDefault();
                 setTimeout(function() {
                     $this.closest('form').submit();
-                }, 200);
+                }, 500);
             }
         }
     });
     google.maps.event.addListener(autocomplete, 'place_changed', function() {
         var place = autocomplete.getPlace();
         if (place && place.geometry && place.geometry.location) {
-            jQuery('#wpustorelocator-search-lat').val(place.geometry.location.k);
-            jQuery('#wpustorelocator-search-lng').val(place.geometry.location.D);
+            jQuery('#wpustorelocator-search-lat').val(place.geometry.location.lat());
+            jQuery('#wpustorelocator-search-lng').val(place.geometry.location.lng());
         }
     });
 };
