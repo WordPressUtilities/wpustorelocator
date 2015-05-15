@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.2
+Version: 0.8.3
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.2';
+    private $script_version = '0.8.3';
 
     private $notices_categories = array(
         'updated',
@@ -557,7 +557,7 @@ class WPUStoreLocator {
         $prevent_single = apply_filters('wpustorelocator_preventsingle', false);
         $datas = array();
         foreach ($stores as $store) {
-            $itinerary_link = 'https://maps.google.com/?q=' . urlencode($this->get_address_from_store($store, '', 1));
+            $itinerary_link = 'https://maps.google.com/?daddr=' . urlencode($this->get_address_from_store($store, '', 1));
 
             $data = array(
                 'name' => $store['post']->post_title,

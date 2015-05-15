@@ -115,7 +115,7 @@ wpustorelocator.setmarker = function(item) {
         title: item.name
     });
     var content = item.address + item.link;
-    if(item.itinerary){
+    if (item.itinerary) {
         content += item.itinerary;
     }
     var infowindow = new google.maps.InfoWindow({
@@ -150,8 +150,26 @@ wpustorelocator.loadsearch = function() {
             }
         }
     });
+    var country_selector = jQuery('#wpustorelocator-country');
     google.maps.event.addListener(autocomplete, 'place_changed', function() {
-        var place = autocomplete.getPlace();
+        var place = autocomplete.getPlace(),
+            country_code = 0,
+            i;
+        if (place && place.address_components) {
+            for (var i in place.address_components) {
+                if (place.address_components[i].types) {
+                    if (place.address_components[i].types[0] == 'country') {
+                        country_code = place.address_components[i].short_name;
+                    }
+                }
+            }
+            if (country_code) {
+                country_selector.val(country_code);
+                setTimeout(function(){
+                    country_selector.trigger('change');
+                },100);
+            }
+        }
         if (place && place.geometry && place.geometry.location) {
             jQuery('#wpustorelocator-search-lat').val(place.geometry.location.lat());
             jQuery('#wpustorelocator-search-lng').val(place.geometry.location.lng());

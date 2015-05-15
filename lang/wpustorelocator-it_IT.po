@@ -1,0 +1,166 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2015-05-15 14:50+0100\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Darklg <darklg.blog@gmail.com>\n"
+"Language-Team: \n"
+"Language: it_IT\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.7.5\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-KeywordsList: __;_e;_n\n"
+"X-Poedit-SearchPath-0: ../.\n"
+
+#: .././wpustorelocator.php:159
+#, php-format
+msgid "The plugin %s should be installed."
+msgstr "Deve essere installato il plugin %s."
+
+#: .././wpustorelocator.php:214
+msgid "Store"
+msgstr "Negozio"
+
+#: .././wpustorelocator.php:215
+msgid "Stores"
+msgstr "Negozi"
+
+#: .././wpustorelocator.php:252
+msgid "Radius list"
+msgstr "Lista raggio"
+
+#: .././wpustorelocator.php:259
+msgid "Server API Key"
+msgstr "Server API Key"
+
+#: .././wpustorelocator.php:263
+msgid "Front API Key"
+msgstr "Front API Key"
+
+#: .././wpustorelocator.php:278
+msgid "Details"
+msgstr "Dettagli"
+
+#: .././wpustorelocator.php:284
+msgid "Localization"
+msgstr "Localizzazione"
+
+#: .././wpustorelocator.php:290
+msgid "Map position"
+msgstr "Posizione della mappa"
+
+#: .././wpustorelocator.php:306
+msgid "Name"
+msgstr "Nome"
+
+#: .././wpustorelocator.php:310
+msgid "Email address"
+msgstr "Indirizzo e-mail"
+
+#: .././wpustorelocator.php:314
+msgid "Opening time"
+msgstr "Ora di apertura"
+
+#: .././wpustorelocator.php:328
+msgid "Phone number"
+msgstr "Numero di telefono"
+
+#: .././wpustorelocator.php:334
+msgid "Address"
+msgstr "Indirizzo"
+
+#: .././wpustorelocator.php:338
+msgid "Address2"
+msgstr "Indirizzo 2"
+
+#: .././wpustorelocator.php:342
+msgid "Zip code"
+msgstr "CAP"
+
+#: .././wpustorelocator.php:346
+msgid "City"
+msgstr "Città"
+
+#: .././wpustorelocator.php:351
+msgid "Region"
+msgstr "Regione"
+
+#: .././wpustorelocator.php:355
+msgid "Country"
+msgstr "Paese"
+
+#: .././wpustorelocator.php:364
+msgid "Latitude"
+msgstr "Latitudine"
+
+#: .././wpustorelocator.php:368
+msgid "Longitude"
+msgstr "Longitudine"
+
+#: .././wpustorelocator.php:372
+msgid "Zoom"
+msgstr "Zoom"
+
+#: .././wpustorelocator.php:567
+msgid "View this store"
+msgstr "Mostra questo negozio"
+
+#: .././wpustorelocator.php:568
+msgid "Go to this store"
+msgstr "Andare in questo negozio"
+
+#: .././wpustorelocator.php:645
+msgid "Select a country"
+msgstr "Scegli un paese"
+
+#: .././wpustorelocator.php:680
+#, php-format
+msgid "Extend search to %s km"
+msgstr "Estendere la ricerca a %s km"
+
+#: .././wpustorelocator.php:687
+msgid "Extend search to ..."
+msgstr "Estendere la ricerca a..."
+
+#: .././wpustorelocator.php:734
+msgid "Geocoding"
+msgstr "Geocoding"
+
+#: .././wpustorelocator.php:740
+msgid ""
+"Please load the address below and click on a suggested result to update GPS "
+"Coordinates"
+msgstr ""
+"Si prega di caricare l'indirizzo di sotto e fare clic su un risultato "
+"suggerito di aggiornare le coordinate GPS"
+
+#: .././wpustorelocator.php:742
+msgid "Load address"
+msgstr "Caricare un indirizzo"
+
+#: .././wpustorelocator.php:747
+msgid "Infos"
+msgstr "Informazioni"
+
+#: .././wpustorelocator.php:751
+msgid "Stores with default localization:"
+msgstr "Negozi con localizzazione predefinita:"
+
+#: .././wpustorelocator.php:756
+msgid "Import"
+msgstr "Importa"
+
+#: .././wpustorelocator.php:759
+msgid "Store list file (.csv)"
+msgstr "file contenente un elenco di negozi"
+
+#: .././wpustorelocator.php:762
+msgid "Replace the previous stores"
+msgstr "Sostituire gli archivi precedenti"
+
+#: .././wpustorelocator.php:797
+msgid "1 store has been imported."
+msgstr "1 negozio è stato importato."
