@@ -137,6 +137,13 @@ wpustorelocator.loadsearch = function() {
     if (!input) {
         return;
     }
+    /* Load */
+    var baseurl = jQuery('#wpustorelocator-baseurl').val();
+    if(baseurl && ('pushState' in history)){
+        history.pushState({}, document.title, baseurl);
+    }
+
+    /* Autocomplete */
     var autocomplete = new google.maps.places.Autocomplete(input);
     jQuery(input).keypress(function(e) {
         var $this = jQuery(this);
@@ -150,7 +157,6 @@ wpustorelocator.loadsearch = function() {
             }
         }
     });
-    var country_selector = jQuery('#wpustorelocator-country');
     google.maps.event.addListener(autocomplete, 'place_changed', function() {
         var place = autocomplete.getPlace(),
             country_code = 0,
@@ -174,5 +180,11 @@ wpustorelocator.loadsearch = function() {
             jQuery('#wpustorelocator-search-lat').val(place.geometry.location.lat());
             jQuery('#wpustorelocator-search-lng').val(place.geometry.location.lng());
         }
+    });
+
+    /* Country */
+    var country_selector = jQuery('#wpustorelocator-country');
+    country_selector.on('change',function(){
+        input.value = '';
     });
 };

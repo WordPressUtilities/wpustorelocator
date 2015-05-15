@@ -110,7 +110,7 @@ msgstr "Mostra questo negozio"
 
 #: .././wpustorelocator.php:568
 msgid "Go to this store"
-msgstr "Andare in questo negozio"
+msgstr "Indicazioni stradali"
 
 #: .././wpustorelocator.php:645
 msgid "Select a country"
@@ -119,7 +119,7 @@ msgstr "Scegli un paese"
 #: .././wpustorelocator.php:680
 #, php-format
 msgid "Extend search to %s km"
-msgstr "Estendere la ricerca a %s km"
+msgstr "Ricercare entro %s km"
 
 #: .././wpustorelocator.php:687
 msgid "Extend search to ..."
