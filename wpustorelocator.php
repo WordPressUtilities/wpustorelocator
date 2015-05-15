@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8
+Version: 0.8.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8';
+    private $script_version = '0.8.1';
 
     private $notices_categories = array(
         'updated',
@@ -1015,7 +1015,7 @@ class WPUStoreLocator {
 
         // Non default lat : mark as non default (stop geoloc via cron)
         if ($defaultlatlng != $latlng) {
-            update_post_meta($store_id, 'store_defaultlat', '0');
+            update_post_meta($post_id, 'store_defaultlat', '0');
         }
         $this->save_store_coord($post_id, $_POST['store_lat'], $_POST['store_lng'], $_POST['store_country']);
     }
