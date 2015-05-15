@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.7
+Version: 0.8
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.7';
+    private $script_version = '0.8';
 
     private $notices_categories = array(
         'updated',
@@ -78,7 +78,7 @@ class WPUStoreLocator {
         ) , 10, 3);
         add_action('save_post', array(&$this,
             'save_latlng'
-        ));
+        ) , 99);
         add_action('wp_head', array(&$this,
             'display_infos'
         ) , 99);
@@ -99,6 +99,14 @@ class WPUStoreLocator {
         ));
         add_action('template_redirect', array(&$this,
             'prevent_single'
+        ));
+
+        // Set cron actions
+        add_action('wpustorelocator_cron_event_hook', array(&$this,
+            'cron'
+        ));
+        add_filter('cron_schedules', array(&$this,
+            'add_scheduled_interval'
         ));
 
         // Display notices
@@ -336,6 +344,7 @@ class WPUStoreLocator {
         $fields['store_city'] = array(
             'box' => 'stores_localization',
             'name' => __('City', 'wpustorelocator') ,
+            'admin_column' => true,
         );
         $fields['store_region'] = array(
             'box' => 'stores_localization',
@@ -345,6 +354,7 @@ class WPUStoreLocator {
             'box' => 'stores_localization',
             'name' => __('Country', 'wpustorelocator') ,
             'type' => 'select',
+            'admin_column' => true,
             'datas' => $this->get_countries() ,
         );
 
@@ -373,7 +383,7 @@ class WPUStoreLocator {
         // Execute the query
         $location_query = get_posts(array(
             'post_type' => 'stores',
-            'posts_per_page' => 100,
+            'posts_per_page' => - 1,
             'suppress_filters' => true
         ));
 
@@ -734,14 +744,22 @@ class WPUStoreLocator {
 
     function admin_options() {
 
+        echo '<h3>' . __('Infos', 'wpustorelocator') . '</h3>';
+
+        $wpq_stores_nb = new WP_Query($this->get_query_for_defaultcoord(1));
+
+        echo '<p>' . __('Stores with default localization:', 'wpustorelocator') . ' ' . $wpq_stores_nb->found_posts . '</p>';
+        wp_reset_postdata();
+
+        echo '<hr />';
+
+        echo '<h3>' . __('Import', 'wpustorelocator') . '</h3>';
+
         // Download model
         echo '<p><label><strong>' . __('Store list file (.csv)', 'wpustorelocator') . '</strong></label><br /><input type="file" name="file" value="" /><br /><small><strong>Format :</strong> Store name;Address;Address #2;Zipcode;City;Etat/Province/Comté;Country;Telephone</small></p>';
 
         // Destroy ?
-        echo '<p><label><input checked="checked" type="checkbox" name="replace" value="" /> ' . __('Replace the previous stores', 'wpustorelocator') . '</label></p>';
-
-        // Geoloc some posts
-        echo '<p><label><input type="checkbox" name="geoloc" value="" /> ' . __('Geoloc stores', 'wpustorelocator') . '</label></p>';
+        echo '<p><label><input type="checkbox" name="replace" value="" /> ' . __('Replace the previous stores', 'wpustorelocator') . '</label></p>';
 
         // upload input and destroy
         echo submit_button('Import');
@@ -809,6 +827,9 @@ class WPUStoreLocator {
         foreach ($location_query as $store) {
             wp_delete_post($store->ID, 1);
         }
+
+        global $wpdb;
+        $wpdb->query("DELETE FROM $this->table_name");
     }
 
     /* ----------------------------------------------------------
@@ -925,15 +946,29 @@ class WPUStoreLocator {
     ---------------------------------------------------------- */
 
     function create_store_from_array($store) {
-
-        $countries = $this->get_countries(1);
+        $countries = $this->get_countries(true);
         $store_lat = '';
         $store_lng = '';
         $country_code = '';
 
+        // Manually fix some countries
+        if ($store[6] == 'Etats-Unis') {
+            $store[6] = 'États-Unis';
+        }
+        if ($store[6] == 'Grande Bretagne') {
+            $store[6] = 'Royaume-Uni';
+        }
+
+        // Test different versions
+        $country_names_to_test = array(
+            $store[6],
+            $this->wd_remove_accents($store[6]) ,
+        );
+
         // Set country settings if name recognized
+
         foreach ($countries as $id => $country) {
-            if ($country['name'] == $store[6]) {
+            if (in_array($country['name'], $country_names_to_test)) {
                 $country_code = $id;
                 $store_lat = $country['lat'];
                 $store_lng = $country['lng'];
@@ -957,8 +992,11 @@ class WPUStoreLocator {
             update_post_meta($store_id, 'store_country', $country_code);
             update_post_meta($store_id, 'store_phone', $store[7]);
             update_post_meta($store_id, 'store_defaultlat', '1');
+            update_post_meta($store_id, 'store_defaultlatlng', $store_lat . '|' . $store_lng);
             update_post_meta($store_id, 'store_lat', $store_lat);
             update_post_meta($store_id, 'store_lng', $store_lng);
+
+            $this->save_store_coord($store_id, $store_lat, $store_lng, $country_code);
 
             return $store_id;
         }
@@ -968,19 +1006,31 @@ class WPUStoreLocator {
 
     /* Save lat lng */
     function save_latlng($post_id) {
-        global $wpdb;
-        if (!isset($_POST['post_type']) || $_POST['post_type'] != 'stores') {
+        if (!isset($_POST['post_type'], $_POST['store_lat'], $_POST['store_lng']) || $_POST['post_type'] != 'stores') {
             return;
         }
+
+        $latlng = $_POST['store_lat'] . '|' . $_POST['store_lng'];
+        $defaultlatlng = get_post_meta($post_id, 'store_defaultlatlng', 1);
+
+        // Non default lat : mark as non default (stop geoloc via cron)
+        if ($defaultlatlng != $latlng) {
+            update_post_meta($store_id, 'store_defaultlat', '0');
+        }
+        $this->save_store_coord($post_id, $_POST['store_lat'], $_POST['store_lng'], $_POST['store_country']);
+    }
+
+    function save_store_coord($post_id, $store_lat, $store_lng, $store_country) {
+        global $wpdb;
 
         $check_link = $wpdb->get_row("SELECT * FROM " . $this->table_name . " WHERE post_id = '" . $post_id . "'");
         if ($check_link != null) {
 
             // We already have a lat lng for this post. Update row
             $wpdb->update($this->table_name, array(
-                'lat' => $_POST['store_lat'],
-                'lng' => $_POST['store_lng'],
-                'country' => $_POST['store_country']
+                'lat' => $store_lat,
+                'lng' => $store_lng,
+                'country' => $store_country
             ) , array(
                 'post_id' => $post_id
             ) , array(
@@ -994,9 +1044,9 @@ class WPUStoreLocator {
             // We do not already have a lat lng for this post. Insert row
             $wpdb->insert($this->table_name, array(
                 'post_id' => $post_id,
-                'lat' => $_POST['store_lat'],
-                'lng' => $_POST['store_lng'],
-                'country' => $_POST['store_country'],
+                'lat' => $store_lat,
+                'lng' => $store_lng,
+                'country' => $store_country,
             ) , array(
                 '%d',
                 '%f',
@@ -1025,6 +1075,72 @@ class WPUStoreLocator {
         require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
         update_option('wpustorelocator_scriptversion', $this->script_version);
+    }
+
+    /* ----------------------------------------------------------
+      Cron
+    ---------------------------------------------------------- */
+
+    function get_query_for_defaultcoord($nb_posts = 10) {
+        return array(
+            'posts_per_page' => $nb_posts,
+            'post_type' => 'stores',
+            'meta_query' => array(
+                array(
+                    'key' => 'store_defaultlat',
+                    'value' => '1',
+                    'compare' => '=',
+                ) ,
+            ) ,
+        );
+    }
+
+    function set_cron() {
+        wp_schedule_event(time() , 'minutes_10', 'wpustorelocator_cron_event_hook');
+    }
+
+    // do something every 10 minutes
+    function cron() {
+        $is_free_api = true;
+
+        $nb_posts = 15;
+        if (!$is_free_api) {
+            $nb_posts = 50;
+        }
+
+        // Select $nb_posts posts with default geoloc
+        $args = $this->get_query_for_defaultcoord($nb_posts);
+        $wpq_stores = new WP_Query($args);
+
+        // Geoloc each post
+        if ($wpq_stores->have_posts()) {
+            while ($wpq_stores->have_posts()) {
+                $wpq_stores->the_post();
+                $this->geocode_post(get_the_ID());
+                if ($is_free_api) {
+                    usleep(300000);
+                }
+                else {
+                    usleep(150000);
+                }
+            }
+        }
+        wp_reset_postdata();
+    }
+
+    function unset_cron() {
+        wp_clear_scheduled_hook('wpustorelocator_cron_event_hook');
+    }
+
+    // add once 2 minute interval to wp schedules
+    public function add_scheduled_interval($schedules) {
+
+        $schedules['minutes_10'] = array(
+            'interval' => 600,
+            'display' => 'Once 10 minutes'
+        );
+
+        return $schedules;
     }
 
     /* ----------------------------------------------------------
@@ -1057,6 +1173,21 @@ class WPUStoreLocator {
         // Empty messages
         delete_transient($this->transient_msg);
     }
+
+    /* ----------------------------------------------------------
+      Utilities
+    ---------------------------------------------------------- */
+
+    /* Thx http://www.weirdog.com/blog/php/supprimer-les-accents-des-caracteres-accentues.html */
+    function wd_remove_accents($str, $charset = 'utf-8') {
+        $str = htmlentities($str, ENT_NOQUOTES, $charset);
+
+        $str = preg_replace('#&([A-za-z])(?:acute|cedil|caron|circ|grave|orn|ring|slash|th|tilde|uml);#', '\1', $str);
+        $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str);
+        $str = preg_replace('#&[^;]+;#', '', $str);
+
+        return $str;
+    }
 }
 
 $WPUStoreLocator = new WPUStoreLocator();
@@ -1064,4 +1195,11 @@ $WPUStoreLocator = new WPUStoreLocator();
 register_activation_hook(__FILE__, array(&$WPUStoreLocator,
     'table_creation'
 ));
+register_activation_hook(__FILE__, array(&$WPUStoreLocator,
+    'set_cron'
+));
+register_deactivation_hook(__FILE__, array(&$WPUStoreLocator,
+    'unset_cron'
+));
+
 
