@@ -139,7 +139,7 @@ wpustorelocator.loadsearch = function() {
     }
     /* Load */
     var baseurl = jQuery('#wpustorelocator-baseurl').val();
-    if(baseurl && ('pushState' in history)){
+    if (baseurl && ('pushState' in history)) {
         history.pushState({}, document.title, baseurl);
     }
 
@@ -171,9 +171,11 @@ wpustorelocator.loadsearch = function() {
             }
             if (country_code) {
                 country_selector.val(country_code);
-                setTimeout(function(){
-                    country_selector.trigger('change');
-                },100);
+                setTimeout(function() {
+                    if (jQuery.fn.FakeSelect) {
+                        jQuery('select').FakeSelect();
+                    }
+                }, 100);
             }
         }
         if (place && place.geometry && place.geometry.location) {
@@ -184,7 +186,7 @@ wpustorelocator.loadsearch = function() {
 
     /* Country */
     var country_selector = jQuery('#wpustorelocator-country');
-    country_selector.on('change',function(){
+    country_selector.on('change', function() {
         input.value = '';
     });
 };

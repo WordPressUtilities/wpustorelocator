@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.4
+Version: 0.8.5
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.4';
+    private $script_version = '0.8.5';
 
     private $notices_categories = array(
         'updated',
@@ -625,7 +625,7 @@ class WPUStoreLocator {
             $address_value = $_GET['address'];
         }
         $return = '<input id="wpustorelocator-search-address" type="text" name="address" value="' . esc_attr($address_value) . '" />';
-        $return.= '<input id="wpustorelocator-baseurl" type="hidden" name="lat" value="'. apply_filters('wpustorelocator_archive_url', get_post_type_archive_link('stores')).'" />';
+        $return.= '<input id="wpustorelocator-baseurl" type="hidden" name="lat" value="' . apply_filters('wpustorelocator_archive_url', get_post_type_archive_link('stores')) . '" />';
         $return.= '<input id="wpustorelocator-search-lat" type="hidden" name="lat" value="" />';
         $return.= '<input id="wpustorelocator-search-lng" type="hidden" name="lng" value="" />';
         return $return;
@@ -768,7 +768,7 @@ class WPUStoreLocator {
 
     function admin_options_postAction() {
 
-        $max_store_nb = 500;
+        $max_store_nb = 550;
 
         // If file exists & valid
         if (isset($_FILES, $_FILES['file'], $_FILES['file']['tmp_name']) && !empty($_FILES['file']['tmp_name']) && stripos($_FILES['file']['type'], 'csv')) {
@@ -786,7 +786,7 @@ class WPUStoreLocator {
             // - Insert new
             $inserted_stores = 0;
             foreach ($stores_list as $store) {
-                $store_id = $this->create_store_from_array($store);
+                $store_id = $this->create_store_from_array($store, false);
                 if (is_numeric($store_id)) {
                     $inserted_stores++;
                 }
@@ -946,7 +946,7 @@ class WPUStoreLocator {
       Datas
     ---------------------------------------------------------- */
 
-    function create_store_from_array($store) {
+    function create_store_from_array($store, $cache = true) {
         $countries = $this->get_countries(true);
         $store_lat = '';
         $store_lng = '';
@@ -996,8 +996,10 @@ class WPUStoreLocator {
             update_post_meta($store_id, 'store_defaultlatlng', $store_lat . '|' . $store_lng);
             update_post_meta($store_id, 'store_lat', $store_lat);
             update_post_meta($store_id, 'store_lng', $store_lng);
+            if ($cache) {
 
-            $this->save_store_coord($store_id, $store_lat, $store_lng, $country_code);
+                $this->save_store_coord($store_id, $store_lat, $store_lng, $country_code);
+            }
 
             return $store_id;
         }
@@ -1202,5 +1204,4 @@ register_activation_hook(__FILE__, array(&$WPUStoreLocator,
 register_deactivation_hook(__FILE__, array(&$WPUStoreLocator,
     'unset_cron'
 ));
-
 
