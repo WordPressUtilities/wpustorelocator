@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.5
+Version: 0.8.6
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.5';
+    private $script_version = '0.8.6';
 
     private $notices_categories = array(
         'updated',
@@ -747,10 +747,16 @@ class WPUStoreLocator {
 
         echo '<h3>' . __('Infos', 'wpustorelocator') . '</h3>';
 
+        $count_stores = wp_count_posts('stores');
         $wpq_stores_nb = new WP_Query($this->get_query_for_defaultcoord(1));
 
-        echo '<p>' . __('Stores with default localization:', 'wpustorelocator') . ' ' . $wpq_stores_nb->found_posts . '</p>';
+        echo '<p>' . __('Stores with default localization:', 'wpustorelocator') . ' ' . $wpq_stores_nb->found_posts . ' / ' . $count_stores->publish . '</p>';
         wp_reset_postdata();
+
+        echo '<hr />';
+
+        echo '<h3>' . __('Geocoding', 'wpustorelocator') . '</h3>';
+        echo submit_button(__('Launch geocoding', 'wpustorelocator') , 'primary', 'launch_cron');
 
         echo '<hr />';
 
@@ -763,10 +769,15 @@ class WPUStoreLocator {
         echo '<p><label><input type="checkbox" name="replace" value="" /> ' . __('Replace the previous stores', 'wpustorelocator') . '</label></p>';
 
         // upload input and destroy
-        echo submit_button('Import');
+        echo submit_button(__('Import', 'wpustorelocator'));
     }
 
     function admin_options_postAction() {
+
+        if (isset($_POST['launch_cron'])) {
+            $this->cron();
+            return;
+        }
 
         $max_store_nb = 550;
 

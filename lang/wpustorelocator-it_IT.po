@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2015-05-15 14:50+0100\n"
+"POT-Creation-Date: 2015-05-16 18:33+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -112,24 +112,24 @@ msgstr "Mostra questo negozio"
 msgid "Go to this store"
 msgstr "Indicazioni stradali"
 
-#: .././wpustorelocator.php:645
+#: .././wpustorelocator.php:646
 msgid "Select a country"
 msgstr "Scegli un paese"
 
-#: .././wpustorelocator.php:680
+#: .././wpustorelocator.php:681
 #, php-format
 msgid "Extend search to %s km"
 msgstr "Ricercare entro %s km"
 
-#: .././wpustorelocator.php:687
+#: .././wpustorelocator.php:688
 msgid "Extend search to ..."
 msgstr "Estendere la ricerca a..."
 
-#: .././wpustorelocator.php:734
+#: .././wpustorelocator.php:735 .././wpustorelocator.php:758
 msgid "Geocoding"
 msgstr "Geocoding"
 
-#: .././wpustorelocator.php:740
+#: .././wpustorelocator.php:741
 msgid ""
 "Please load the address below and click on a suggested result to update GPS "
 "Coordinates"
@@ -137,30 +137,34 @@ msgstr ""
 "Si prega di caricare l'indirizzo di sotto e fare clic su un risultato "
 "suggerito di aggiornare le coordinate GPS"
 
-#: .././wpustorelocator.php:742
+#: .././wpustorelocator.php:743
 msgid "Load address"
 msgstr "Caricare un indirizzo"
 
-#: .././wpustorelocator.php:747
+#: .././wpustorelocator.php:748
 msgid "Infos"
 msgstr "Informazioni"
 
-#: .././wpustorelocator.php:751
+#: .././wpustorelocator.php:753
 msgid "Stores with default localization:"
 msgstr "Negozi con localizzazione predefinita:"
 
-#: .././wpustorelocator.php:756
+#: .././wpustorelocator.php:759
+msgid "Launch geocoding"
+msgstr "Lanciare la geocodifica"
+
+#: .././wpustorelocator.php:763 .././wpustorelocator.php:772
 msgid "Import"
 msgstr "Importa"
 
-#: .././wpustorelocator.php:759
+#: .././wpustorelocator.php:766
 msgid "Store list file (.csv)"
 msgstr "file contenente un elenco di negozi"
 
-#: .././wpustorelocator.php:762
+#: .././wpustorelocator.php:769
 msgid "Replace the previous stores"
 msgstr "Sostituire gli archivi precedenti"
 
-#: .././wpustorelocator.php:797
+#: .././wpustorelocator.php:809
 msgid "1 store has been imported."
 msgstr "1 negozio è stato importato."
