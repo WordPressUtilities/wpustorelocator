@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.6
+Version: 0.8.7
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.6';
+    private $script_version = '0.8.7';
 
     private $notices_categories = array(
         'updated',
@@ -99,6 +99,9 @@ class WPUStoreLocator {
         ));
         add_action('template_redirect', array(&$this,
             'prevent_single'
+        ));
+        add_filter('admin_init', array(&$this,
+            'admin_visual_cron'
         ));
 
         // Set cron actions
@@ -743,15 +746,31 @@ class WPUStoreLocator {
         echo '<p><button type="button" id="wpustorelocator-admingeocoding-button">' . __('Load address', 'wpustorelocator') . '</button></p>';
     }
 
+    function admin_visual_cron() {
+        if(!isset($_GET['wpustorelocator-visualcron'])){
+            return;
+        }
+        $this->cron();
+        echo $this->admin_count_stores();
+        echo '<script>setTimeout(function(){window.location=window.location.href;},1000);</script>';
+        die;
+    }
+
+    function admin_count_stores(){
+        $count_stores = wp_count_posts('stores');
+        $wpq_stores_nb = new WP_Query($this->get_query_for_defaultcoord(1));
+
+        $return =  '<p>' . __('Stores with default localization:', 'wpustorelocator') . ' ' . $wpq_stores_nb->found_posts . ' / ' . $count_stores->publish . '</p>';
+        wp_reset_postdata();
+
+        return $return;
+    }
+
     function admin_options() {
 
         echo '<h3>' . __('Infos', 'wpustorelocator') . '</h3>';
 
-        $count_stores = wp_count_posts('stores');
-        $wpq_stores_nb = new WP_Query($this->get_query_for_defaultcoord(1));
-
-        echo '<p>' . __('Stores with default localization:', 'wpustorelocator') . ' ' . $wpq_stores_nb->found_posts . ' / ' . $count_stores->publish . '</p>';
-        wp_reset_postdata();
+        echo $this->admin_count_stores();
 
         echo '<hr />';
 
@@ -806,7 +825,8 @@ class WPUStoreLocator {
                 }
             }
             if ($inserted_stores > 0) {
-                $this->set_message('import_ok', sprintf(_n('1 store has been imported.', '%s stores has been imported.', $inserted_stores, 'wpustorelocator') , $inserted_stores) , 'updated');
+                $success_msg = ($inserted_stores > 1) ? sprintf(__('%s stores have been imported.', 'wpustorelocator'), $inserted_stores) : __('1 store has been imported.', 'wpustorelocator');
+                $this->set_message('import_ok', $success_msg, 'updated');
             }
         }
     }

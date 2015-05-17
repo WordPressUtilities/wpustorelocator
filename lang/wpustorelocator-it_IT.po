@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2015-05-16 18:33+0100\n"
+"POT-Creation-Date: 2015-05-16 19:17+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -164,6 +164,11 @@ msgstr "file contenente un elenco di negozi"
 #: .././wpustorelocator.php:769
 msgid "Replace the previous stores"
 msgstr "Sostituire gli archivi precedenti"
+
+#: .././wpustorelocator.php:809
+#, php-format
+msgid "%s stores have been imported."
+msgstr "%s negozi sono stati importati."
 
 #: .././wpustorelocator.php:809
 msgid "1 store has been imported."

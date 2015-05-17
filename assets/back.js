@@ -20,11 +20,10 @@ jQuery(document).ready(function() {
         e.preventDefault();
         var val = jQuery('#el_id_store_address').val() +
             ' ' + jQuery('#el_id_store_address2').val() +
-            ' ' + jQuery('#el_id_store_address2').val() +
             ' ' + jQuery('#el_id_store_zip').val() +
             ' ' + jQuery('#el_id_store_city').val() +
             ' ' + jQuery('#el_id_store_region').val() +
-            ' ' + jQuery('#el_id_store_country').val();
+            ', ' + jQuery('#el_id_store_country option:selected').text();
         jQuery(input).val(val);
         setTimeout(function() {
             jQuery(input).focus();
