@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.7
+Version: 0.8.8
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.7';
+    private $script_version = '0.8.8';
 
     private $notices_categories = array(
         'updated',
@@ -102,6 +102,9 @@ class WPUStoreLocator {
         ));
         add_filter('admin_init', array(&$this,
             'admin_visual_cron'
+        ));
+        add_filter('admin_init', array(&$this,
+            'admin_reload_dbcache'
         ));
 
         // Set cron actions
@@ -746,8 +749,9 @@ class WPUStoreLocator {
         echo '<p><button type="button" id="wpustorelocator-admingeocoding-button">' . __('Load address', 'wpustorelocator') . '</button></p>';
     }
 
+    /* Launch the cron in a loop */
     function admin_visual_cron() {
-        if(!isset($_GET['wpustorelocator-visualcron'])){
+        if (!isset($_GET['wpustorelocator-visualcron']) || !current_user_can('create_users')) {
             return;
         }
         $this->cron();
@@ -756,11 +760,49 @@ class WPUStoreLocator {
         die;
     }
 
-    function admin_count_stores(){
+    /* Reload cached coords */
+    function admin_reload_dbcache() {
+        if (!isset($_GET['wpustorelocator-reloaddbcache']) || !current_user_can('create_users')) {
+            return;
+        }
+
+        global $wpdb;
+
+        // Delete all cached coords
+        $wpdb->query("DELETE FROM $this->table_name");
+
+        $content = '';
+        $args = $this->get_query_for_defaultcoord(-1, '0');
+        $wpq_stores = new WP_Query($args);
+        if ($wpq_stores->have_posts()) {
+            $content.= '<ul>';
+            while ($wpq_stores->have_posts()) {
+                $wpq_stores->the_post();
+                $post_id = get_the_ID();
+                $store_lat = get_post_meta($post_id, 'store_lat', 1);
+                $store_lng = get_post_meta($post_id, 'store_lng', 1);
+                $store_country = get_post_meta($post_id, 'store_country', 1);
+                $this->save_store_coord($post_id, $store_lat, $store_lng, $store_country, true);
+
+                $content.= '<li>';
+                $content.= get_the_title();
+                $content.= '</li>';
+            }
+            $content.= '</ul>';
+        }
+        wp_reset_postdata();
+
+        // Display success
+        ob_start("ob_gzhandler");
+        echo $content;
+        die;
+    }
+
+    function admin_count_stores() {
         $count_stores = wp_count_posts('stores');
         $wpq_stores_nb = new WP_Query($this->get_query_for_defaultcoord(1));
 
-        $return =  '<p>' . __('Stores with default localization:', 'wpustorelocator') . ' ' . $wpq_stores_nb->found_posts . ' / ' . $count_stores->publish . '</p>';
+        $return = '<p>' . __('Stores with default localization:', 'wpustorelocator') . ' ' . $wpq_stores_nb->found_posts . ' / ' . $count_stores->publish . '</p>';
         wp_reset_postdata();
 
         return $return;
@@ -825,7 +867,7 @@ class WPUStoreLocator {
                 }
             }
             if ($inserted_stores > 0) {
-                $success_msg = ($inserted_stores > 1) ? sprintf(__('%s stores have been imported.', 'wpustorelocator'), $inserted_stores) : __('1 store has been imported.', 'wpustorelocator');
+                $success_msg = ($inserted_stores > 1) ? sprintf(__('%s stores have been imported.', 'wpustorelocator') , $inserted_stores) : __('1 store has been imported.', 'wpustorelocator');
                 $this->set_message('import_ok', $success_msg, 'updated');
             }
         }
@@ -939,6 +981,7 @@ class WPUStoreLocator {
         );
 
         $country = get_post_meta($post_id, 'store_country', 1);
+        $country_code = $country;
         $country_list = $this->get_countries();
         if (isset($country_list[$country])) {
             $country = $country_list[$country];
@@ -952,6 +995,7 @@ class WPUStoreLocator {
             update_post_meta($post_id, 'store_defaultlat', '0');
             update_post_meta($post_id, 'store_lat', $details['lat']);
             update_post_meta($post_id, 'store_lng', $details['lng']);
+            $this->save_store_coord($post_id, $details['lat'], $details['lng'], $country_code);
             return true;
         }
         return false;
@@ -1028,7 +1072,6 @@ class WPUStoreLocator {
             update_post_meta($store_id, 'store_lat', $store_lat);
             update_post_meta($store_id, 'store_lng', $store_lng);
             if ($cache) {
-
                 $this->save_store_coord($store_id, $store_lat, $store_lng, $country_code);
             }
 
@@ -1054,10 +1097,14 @@ class WPUStoreLocator {
         $this->save_store_coord($post_id, $_POST['store_lat'], $_POST['store_lng'], $_POST['store_country']);
     }
 
-    function save_store_coord($post_id, $store_lat, $store_lng, $store_country) {
+    function save_store_coord($post_id, $store_lat, $store_lng, $store_country, $force_insert = false) {
         global $wpdb;
+        $check_link = null;
 
-        $check_link = $wpdb->get_row("SELECT * FROM " . $this->table_name . " WHERE post_id = '" . $post_id . "'");
+        if (!$force_insert) {
+            $check_link = $wpdb->get_row("SELECT * FROM " . $this->table_name . " WHERE post_id = '" . $post_id . "'");
+        }
+
         if ($check_link != null) {
 
             // We already have a lat lng for this post. Update row
@@ -1115,14 +1162,14 @@ class WPUStoreLocator {
       Cron
     ---------------------------------------------------------- */
 
-    function get_query_for_defaultcoord($nb_posts = 10) {
+    function get_query_for_defaultcoord($nb_posts = 10, $default = '1') {
         return array(
             'posts_per_page' => $nb_posts,
             'post_type' => 'stores',
             'meta_query' => array(
                 array(
                     'key' => 'store_defaultlat',
-                    'value' => '1',
+                    'value' => $default,
                     'compare' => '=',
                 ) ,
             ) ,
