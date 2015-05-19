@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.8
+Version: 0.8.9
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.8';
+    private $script_version = '0.8.9';
 
     private $notices_categories = array(
         'updated',
@@ -520,12 +520,13 @@ class WPUStoreLocator {
     }
 
     function get_stores_countries() {
+        global $wpdb;
         $countries = array();
         $country_list = $this->get_countries(true);
-        $store_list = $this->get_stores_list();
-        foreach ($store_list as $store) {
-            if (isset($store['metas']['store_country']) && array_key_exists($store['metas']['store_country'][0], $country_list)) {
-                $countries[$store['metas']['store_country'][0]] = $country_list[$store['metas']['store_country'][0]];
+        $used_country_list = $wpdb->get_results("SELECT DISTINCT country FROM $this->table_name;", ARRAY_A);
+        foreach ($used_country_list as $country) {
+            if (isset($country['country']) && array_key_exists($country['country'], $country_list)) {
+                $countries[$country['country']] = $country_list[$country['country']];
             }
         }
         return $countries;
