@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.9
+Version: 0.8.10
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.9';
+    private $script_version = '0.8.10';
 
     private $notices_categories = array(
         'updated',
@@ -603,7 +603,9 @@ class WPUStoreLocator {
             $content.= $store['metas']['store_address2'][0] . ($raw ? ' ' : '<br />');
         }
         $content.= $store['metas']['store_zip'][0] . ' ' . $store['metas']['store_city'][0] . ($raw ? ' ' : '<br />');
-
+        if (!empty($store['metas']['store_region'][0])) {
+            $content.= $store['metas']['store_region'][0] . ($raw ? ' ' : '<br />');
+        }
         $country = '';
         $country_list = $this->get_countries();
         if (isset($country_list[$store['metas']['store_country'][0]])) {
@@ -632,7 +634,7 @@ class WPUStoreLocator {
             $address_value = $_GET['address'];
         }
         $return = '<input id="wpustorelocator-search-address" type="text" name="address" value="' . esc_attr($address_value) . '" />';
-        $return.= '<input id="wpustorelocator-baseurl" type="hidden" name="lat" value="' . apply_filters('wpustorelocator_archive_url', get_post_type_archive_link('stores')) . '" />';
+        $return.= '<input id="wpustorelocator-baseurl" type="hidden" value="' . apply_filters('wpustorelocator_archive_url', get_post_type_archive_link('stores')) . '" />';
         $return.= '<input id="wpustorelocator-search-lat" type="hidden" name="lat" value="" />';
         $return.= '<input id="wpustorelocator-search-lng" type="hidden" name="lng" value="" />';
         return $return;

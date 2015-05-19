@@ -107,6 +107,7 @@ wpustorelocator.radiusToZoom = function(radius) {
   Create a marker
 ---------------------------------------------------------- */
 
+wpustorelocator.infowindow = false;
 wpustorelocator.setmarker = function(item) {
     var marker = new google.maps.Marker({
         position: new google.maps.LatLng(item.lat, item.lng),
@@ -122,6 +123,10 @@ wpustorelocator.setmarker = function(item) {
         content: content
     });
     google.maps.event.addListener(marker, 'click', function() {
+        if (typeof wpustorelocator.infowindow == 'object') {
+            wpustorelocator.infowindow.close();
+        }
+        wpustorelocator.infowindow = infowindow;
         infowindow.open(wpustorelocator_map, marker);
         wpustorelocator_map.setZoom(15);
         wpustorelocator_map.setCenter(marker.getPosition());
