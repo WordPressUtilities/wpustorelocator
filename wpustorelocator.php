@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.9
+Version: 0.9.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.9';
+    private $script_version = '0.9.1';
 
     private $notices_categories = array(
         'updated',
@@ -108,12 +108,14 @@ class WPUStoreLocator {
         ));
 
         // Admin list enhancement
-        add_action('restrict_manage_posts', array(&$this,
-            'filter_storelist_by_country'
-        ));
-        add_filter('parse_query', array(&$this,
-            'filter_storelist_by_country_query'
-        ));
+        if (is_admin()) {
+            add_action('restrict_manage_posts', array(&$this,
+                'filter_storelist_by_country'
+            ));
+            add_filter('parse_query', array(&$this,
+                'filter_storelist_by_country_query'
+            ));
+        }
 
         // Set cron actions
         add_action('wpustorelocator_cron_event_hook', array(&$this,
@@ -679,10 +681,13 @@ class WPUStoreLocator {
         if (isset($_GET['address'])) {
             $address_value = $_GET['address'];
         }
+
+        $search = $this->get_search_parameters($_GET);
+
         $return = '<input id="wpustorelocator-search-address" type="text" name="address" value="' . esc_attr($address_value) . '" />';
         $return.= '<input id="wpustorelocator-baseurl" type="hidden" value="' . apply_filters('wpustorelocator_archive_url', get_post_type_archive_link('stores')) . '" />';
-        $return.= '<input id="wpustorelocator-search-lat" type="hidden" name="lat" value="" />';
-        $return.= '<input id="wpustorelocator-search-lng" type="hidden" name="lng" value="" />';
+        $return.= '<input id="wpustorelocator-search-lat" type="hidden" name="lat" value="' . $search['lat'] . '" />';
+        $return.= '<input id="wpustorelocator-search-lng" type="hidden" name="lng" value="' . $search['lng'] . '" />';
         return $return;
     }
 

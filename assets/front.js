@@ -193,5 +193,7 @@ wpustorelocator.loadsearch = function() {
     var country_selector = jQuery('#wpustorelocator-country');
     country_selector.on('change', function() {
         input.value = '';
+        jQuery('#wpustorelocator-search-lat').val('');
+        jQuery('#wpustorelocator-search-lng').val('');
     });
 };
