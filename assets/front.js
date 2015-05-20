@@ -94,9 +94,14 @@ wpustorelocator.loadmap = function(map) {
     wpustorelocator_map = new google.maps.Map(wpustorelocator_mapel.get(0), opt);
 
     var item = false;
+    var markers = [];
     for (var i = 0, len = window.wpustorelocatorlist.length; i < len; i++) {
-        wpustorelocator.setmarker(window.wpustorelocatorlist[i]);
+        markers.push(wpustorelocator.setmarker(window.wpustorelocatorlist[i]));
     }
+    if (typeof MarkerClusterer == 'function') {
+        var markerCluster = new MarkerClusterer(wpustorelocator_map, markers);
+    }
+
 };
 
 wpustorelocator.radiusToZoom = function(radius) {
@@ -131,6 +136,7 @@ wpustorelocator.setmarker = function(item) {
         wpustorelocator_map.setZoom(15);
         wpustorelocator_map.setCenter(marker.getPosition());
     });
+    return marker;
 };
 
 /* ----------------------------------------------------------

@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.10.3
+Version: 0.11
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,8 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.10.3';
+    private $script_version = '0.11';
+    private $use_markerclusterer = 0;
 
     private $notices_categories = array(
         'updated',
@@ -31,6 +32,7 @@ class WPUStoreLocator {
         $this->table_name = $wpdb->prefix . 'wpustorelocatorlist';
         $this->serverapi_key = get_option('wpustorelocator_serverapikey');
         $this->frontapi_key = get_option('wpustorelocator_frontapikey');
+        $this->use_markerclusterer = (get_option('wpustorelocator_use_markerclusterer') == 1);
 
         $pages = array(
             'admin' => array(
@@ -205,22 +207,28 @@ class WPUStoreLocator {
     }
 
     function enqueue_scripts() {
-        if ($this->is_storelocator_front() || is_singular('stores')) {
-            wp_enqueue_script('wpustorelocator-front', plugins_url('/assets/front.js', __FILE__) , array(
-                'jquery'
-            ) , $this->script_version, true);
-        }
-        if (is_admin()) {
-            wp_enqueue_script('wpustorelocator-back', plugins_url('/assets/back.js', __FILE__) , array(
-                'jquery'
-            ) , $this->script_version, true);
-        }
         $lang = explode('_', get_locale());
         $mainlang = '';
         if (isset($lang[0])) {
             $mainlang = $lang[0];
         }
         wp_enqueue_script('wpustorelocator-maps', 'http://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places&key=' . $this->frontapi_key . '&language=' . $mainlang . '&sensor=false', false, '3');
+
+        if ($this->is_storelocator_front() || is_singular('stores')) {
+            wp_enqueue_script('wpustorelocator-front', plugins_url('/assets/front.js', __FILE__) , array(
+                'jquery'
+            ) , $this->script_version, true);
+            if ($this->use_markerclusterer) {
+                wp_enqueue_script('wpustorelocator-markerclusterer', plugins_url('/assets/markerclusterer_packed.js', __FILE__) , array(
+                    'wpustorelocator-maps'
+                ) , $this->script_version, true);
+            }
+        }
+        if (is_admin()) {
+            wp_enqueue_script('wpustorelocator-back', plugins_url('/assets/back.js', __FILE__) , array(
+                'jquery'
+            ) , $this->script_version, true);
+        }
     }
 
     /* ----------------------------------------------------------
@@ -271,6 +279,11 @@ class WPUStoreLocator {
             'label' => __('Radius list', 'wpustorelocator') ,
             'box' => 'wpustorelocator_settings',
             'type' => 'textarea'
+        );
+        $options['wpustorelocator_use_markerclusterer'] = array(
+            'label' => __('Use marker clusterer', 'wpustorelocator') ,
+            'box' => 'wpustorelocator_settings',
+            'type' => 'select'
         );
 
         /* API */
@@ -587,14 +600,14 @@ class WPUStoreLocator {
         $datas = array();
         foreach ($stores as $store) {
             $itinerary_link = 'https://maps.google.com/?daddr=' . urlencode($this->get_address_from_store($store, '', 1));
-
+            $store_url = parse_url(get_permalink($store['post']->ID));
             $data = array(
                 'name' => $store['post']->post_title,
                 'lat' => $store['metas']['store_lat'][0],
                 'lng' => $store['metas']['store_lng'][0],
-                'address' => $this->get_address_from_store($store) ,
-                'link' => '<a class="store-link" href="' . get_permalink($store['post']->ID) . '">' . __('View this store', 'wpustorelocator') . '</a>',
-                'itinerary' => '<a target="_blank" class="store-itinerary" href="' . $itinerary_link . '">' . __('Go to this store', 'wpustorelocator') . '</a>',
+                'address' => $this->get_address_from_store($store, 'h3', 0, 1) ,
+                'link' => '<a href="' . $store_url['path'] . '">' . __('View this store', 'wpustorelocator') . '</a>',
+                'itinerary' => '<a target="_blank" href="' . $itinerary_link . '">' . __('Go to this store', 'wpustorelocator') . '</a>',
             );
 
             if ($prevent_single) {
@@ -611,11 +624,11 @@ class WPUStoreLocator {
       Display helpers
     ---------------------------------------------------------- */
 
-    function get_address_from_store($store, $title_tag = 'h3', $raw = false) {
+    function get_address_from_store($store, $title_tag = 'h3', $raw = false, $minhtml = false) {
         $content = '';
         if (!$raw) {
-            $content.= '<div class="store-address">';
-            $content.= '<' . $title_tag . ' class="store-name">';
+            $content.= $minhtml ? '' : '<div class="store-address">';
+            $content.= '<' . $title_tag . ($minhtml ? '' : ' class="store-name"') . '>';
             $content.= $store['metas']['store_name'][0];
             $content.= '</' . $title_tag . '>';
         }
@@ -635,7 +648,7 @@ class WPUStoreLocator {
         }
 
         if (!$raw) {
-            $content.= '</div>';
+            $content.= $minhtml ? '' : '</div>';
         }
 
         return $content;
