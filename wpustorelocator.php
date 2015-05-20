@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.9.1
+Version: 0.10
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.9.1';
+    private $script_version = '0.10';
 
     private $notices_categories = array(
         'updated',
@@ -115,6 +115,9 @@ class WPUStoreLocator {
             add_filter('parse_query', array(&$this,
                 'filter_storelist_by_country_query'
             ));
+            add_filter("pre_get_posts", array(&$this,
+                'search_fields_admin'
+            ));
         }
 
         // Set cron actions
@@ -129,42 +132,6 @@ class WPUStoreLocator {
         add_action('admin_notices', array(&$this,
             'admin_notices'
         ));
-    }
-
-    function filter_storelist_by_country() {
-        $screen = get_current_screen();
-        if ($screen->post_type == 'stores') {
-            $countries = $this->get_stores_countries();
-            uasort($countries, array(&$this,
-                'sort_countries'
-            ));
-            printf('<select name="%s" class="postform">', 'store_country');
-            printf('<option value="0" selected>%s</option>', __('All countries', 'wpustorelocator'));
-            foreach ($countries as $id => $country) {
-                if (isset($_GET["store_country"]) && $_GET["store_country"] == $id) {
-                    printf('<option value="%s" selected>%s</option>', $id, $country['name']);
-                }
-                else {
-                    printf('<option value="%s">%s</option>', $id, $country['name']);
-                }
-            }
-            print ('</select>');
-        }
-    }
-
-    function filter_storelist_by_country_query($query) {
-        $screen = get_current_screen();
-        if ($screen->post_type == 'stores') {
-            $countries = $this->get_stores_countries();
-            if (isset($_GET['store_country']) && array_key_exists($_GET['store_country'], $countries)) {
-                $meta_query[] = array(
-                    'key' => 'store_country',
-                    'value' => $_GET['store_country'],
-                    'compare' => '=',
-                );
-                $query->set('meta_query', $meta_query);
-            }
-        }
     }
 
     function init() {
@@ -960,6 +927,75 @@ class WPUStoreLocator {
         $wpdb->query("DELETE FROM $this->table_name");
     }
 
+    /* Admin list
+     -------------------------- */
+
+    function search_fields_admin($query) {
+        if (!is_admin() || !$query->is_search) {
+            return;
+        }
+        $screen = get_current_screen();
+        if (!is_object($screen) || $screen->id != 'edit-stores') {
+            return;
+        }
+
+        $custom_fields = array(
+            "store_name",
+            "store_city"
+        );
+        $searchterm = $query->query_vars['s'];
+        $query->query_vars['s'] = "";
+        if ($searchterm != "") {
+            $meta_query = array(
+                'relation' => 'OR'
+            );
+            foreach ($custom_fields as $cf) {
+                array_push($meta_query, array(
+                    'key' => $cf,
+                    'value' => $searchterm,
+                    'compare' => 'LIKE'
+                ));
+            }
+            $query->set("meta_query", $meta_query);
+        }
+    }
+
+    function filter_storelist_by_country() {
+        $screen = get_current_screen();
+        if ($screen->post_type == 'stores') {
+            $countries = $this->get_stores_countries();
+            uasort($countries, array(&$this,
+                'sort_countries'
+            ));
+            printf('<select name="%s" class="postform">', 'store_country');
+            printf('<option value="0" selected>%s</option>', __('All countries', 'wpustorelocator'));
+            foreach ($countries as $id => $country) {
+                if (isset($_GET["store_country"]) && $_GET["store_country"] == $id) {
+                    printf('<option value="%s" selected>%s</option>', $id, $country['name']);
+                }
+                else {
+                    printf('<option value="%s">%s</option>', $id, $country['name']);
+                }
+            }
+            print ('</select>');
+        }
+    }
+
+    function filter_storelist_by_country_query($query) {
+        $screen = get_current_screen();
+        if ($screen->post_type == 'stores') {
+            $countries = $this->get_stores_countries();
+            if (isset($_GET['store_country']) && array_key_exists($_GET['store_country'], $countries)) {
+                $meta_query[] = array(
+                    'key' => 'store_country',
+                    'value' => $_GET['store_country'],
+                    'compare' => '=',
+                );
+                $query->set('meta_query', $meta_query);
+            }
+        }
+    }
+
     /* ----------------------------------------------------------
       Search
     ---------------------------------------------------------- */
@@ -1345,4 +1381,3 @@ register_activation_hook(__FILE__, array(&$WPUStoreLocator,
 register_deactivation_hook(__FILE__, array(&$WPUStoreLocator,
     'unset_cron'
 ));
-
