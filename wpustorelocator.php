@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.10.2
+Version: 0.10.3
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.10.2';
+    private $script_version = '0.10.3';
 
     private $notices_categories = array(
         'updated',
@@ -429,11 +429,18 @@ class WPUStoreLocator {
             'location_posts_where'
         ));
 
+        add_filter("pre_get_posts", array(&$this,
+            'location_posts_country'
+        ));
+
         $stores = $this->get_stores_list();
 
         // Remove the filter
         remove_filter('posts_where', array(&$this,
             'location_posts_where'
+        ));
+        remove_filter('pre_get_posts', array(&$this,
+            'location_posts_country'
         ));
 
         return $stores;
@@ -1042,10 +1049,7 @@ class WPUStoreLocator {
 
         global $wpdb;
 
-        if ($this->tmp_lat == 0 && $this->tmp_lng == 0) {
-            $where.= $wpdb->prepare(" AND $wpdb->posts.ID IN (SELECT post_id FROM " . $this->table_name . " WHERE country='%s')", $this->tmp_country);
-        }
-        else {
+        if ($this->tmp_lat != 0 || $this->tmp_lng != 0) {
 
             // Append our radius calculation to the WHERE
             $where.= $wpdb->prepare(" AND $wpdb->posts.ID IN (SELECT post_id FROM " . $this->table_name . " WHERE
@@ -1059,6 +1063,18 @@ class WPUStoreLocator {
 
         // Return the updated WHERE part of the query
         return $where;
+    }
+
+    function location_posts_country($query) {
+        if ($this->tmp_lat == 0 && $this->tmp_lng == 0 && !empty($this->tmp_country)) {
+            $query->set("meta_query", array(
+                array(
+                    'key' => 'store_country',
+                    'value' => $this->tmp_country,
+                    'compare' => '='
+                )
+            ));
+        }
     }
 
     /* ----------------------------------------------------------
