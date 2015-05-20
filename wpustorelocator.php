@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.8.10
+Version: 0.9
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.8.10';
+    private $script_version = '0.9';
 
     private $notices_categories = array(
         'updated',
@@ -107,6 +107,14 @@ class WPUStoreLocator {
             'admin_reload_dbcache'
         ));
 
+        // Admin list enhancement
+        add_action('restrict_manage_posts', array(&$this,
+            'filter_storelist_by_country'
+        ));
+        add_filter('parse_query', array(&$this,
+            'filter_storelist_by_country_query'
+        ));
+
         // Set cron actions
         add_action('wpustorelocator_cron_event_hook', array(&$this,
             'cron'
@@ -119,6 +127,42 @@ class WPUStoreLocator {
         add_action('admin_notices', array(&$this,
             'admin_notices'
         ));
+    }
+
+    function filter_storelist_by_country() {
+        $screen = get_current_screen();
+        if ($screen->post_type == 'stores') {
+            $countries = $this->get_stores_countries();
+            uasort($countries, array(&$this,
+                'sort_countries'
+            ));
+            printf('<select name="%s" class="postform">', 'store_country');
+            printf('<option value="0" selected>%s</option>', __('All countries', 'wpustorelocator'));
+            foreach ($countries as $id => $country) {
+                if (isset($_GET["store_country"]) && $_GET["store_country"] == $id) {
+                    printf('<option value="%s" selected>%s</option>', $id, $country['name']);
+                }
+                else {
+                    printf('<option value="%s">%s</option>', $id, $country['name']);
+                }
+            }
+            print ('</select>');
+        }
+    }
+
+    function filter_storelist_by_country_query($query) {
+        $screen = get_current_screen();
+        if ($screen->post_type == 'stores') {
+            $countries = $this->get_stores_countries();
+            if (isset($_GET['store_country']) && array_key_exists($_GET['store_country'], $countries)) {
+                $meta_query[] = array(
+                    'key' => 'store_country',
+                    'value' => $_GET['store_country'],
+                    'compare' => '=',
+                );
+                $query->set('meta_query', $meta_query);
+            }
+        }
     }
 
     function init() {
@@ -351,6 +395,7 @@ class WPUStoreLocator {
             'box' => 'stores_localization',
             'name' => __('City', 'wpustorelocator') ,
             'admin_column' => true,
+            'admin_column_sortable' => true,
         );
         $fields['store_region'] = array(
             'box' => 'stores_localization',
@@ -361,6 +406,7 @@ class WPUStoreLocator {
             'name' => __('Country', 'wpustorelocator') ,
             'type' => 'select',
             'admin_column' => true,
+            'admin_column_sortable' => true,
             'datas' => $this->get_countries() ,
         );
 
@@ -757,7 +803,7 @@ class WPUStoreLocator {
         if (!isset($_GET['wpustorelocator-visualcron']) || !current_user_can('create_users')) {
             return;
         }
-        $this->cron();
+        $this->cron(1);
         echo $this->admin_count_stores();
         echo '<script>setTimeout(function(){window.location=window.location.href;},1000);</script>';
         die;
@@ -976,7 +1022,7 @@ class WPUStoreLocator {
       Geocoding
     ---------------------------------------------------------- */
 
-    function geocode_post($post_id) {
+    function geocode_post($post_id, $debug = false) {
 
         $default_details = array(
             'lat' => 0,
@@ -992,7 +1038,7 @@ class WPUStoreLocator {
 
         $address = get_post_meta($post_id, 'store_address', 1) . ', ' . get_post_meta($post_id, 'store_zip', 1) . ' ' . get_post_meta($post_id, 'store_city', 1) . ', ' . $country;
 
-        $details = $this->geocode_address($address);
+        $details = $this->geocode_address($address, $debug);
 
         if ($details != $default_details) {
             update_post_meta($post_id, 'store_defaultlat', '0');
@@ -1004,15 +1050,24 @@ class WPUStoreLocator {
         return false;
     }
 
-    function geocode_address($address) {
+    function geocode_address($address, $debug = false) {
         $get = wp_remote_get('https://maps.googleapis.com/maps/api/geocode/json?address=' . urlencode($address) . '&key=' . $this->serverapi_key);
         $geoloc = json_decode($get['body']);
         $lat = 0;
         $lng = 0;
-        if (is_object($geoloc) && $geoloc->status === 'OK') {
-            $details = $geoloc->results[0]->geometry->location;
-            $lat = $details->lat;
-            $lng = $details->lng;
+        if (is_object($geoloc)) {
+            if ($geoloc->status === 'OK') {
+                $details = $geoloc->results[0]->geometry->location;
+                $lat = $details->lat;
+                $lng = $details->lng;
+            }
+            else {
+                if ($debug) {
+                    echo '<pre>';
+                    var_dump($geoloc);
+                    echo '</pre>';
+                }
+            }
         }
         return array(
             'lat' => $lat,
@@ -1184,7 +1239,7 @@ class WPUStoreLocator {
     }
 
     // do something every 10 minutes
-    function cron() {
+    function cron($debug = false) {
         $is_free_api = true;
 
         $nb_posts = 15;
@@ -1200,7 +1255,7 @@ class WPUStoreLocator {
         if ($wpq_stores->have_posts()) {
             while ($wpq_stores->have_posts()) {
                 $wpq_stores->the_post();
-                $this->geocode_post(get_the_ID());
+                $this->geocode_post(get_the_ID() , $debug);
                 if ($is_free_api) {
                     usleep(300000);
                 }
@@ -1221,7 +1276,7 @@ class WPUStoreLocator {
 
         $schedules['minutes_10'] = array(
             'interval' => 600,
-            'display' => 'Once 10 minutes'
+            'display' => __('Once 10 minutes', 'wpustorelocator')
         );
 
         return $schedules;
