@@ -158,6 +158,8 @@ wpustorelocator.loadsearch = function() {
     var autocomplete = new google.maps.places.Autocomplete(input);
     jQuery(input).keypress(function(e) {
         var $this = jQuery(this);
+        jQuery('#wpustorelocator-search-lat').val('');
+        jQuery('#wpustorelocator-search-lng').val('');
         if (e.which == 13) {
             google.maps.event.trigger(autocomplete, 'place_changed');
             if (!jQuery('#wpustorelocator-search-lat').val()) {
