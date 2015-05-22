@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.11.1
+Version: 0.12
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.11.1';
+    private $script_version = '0.12';
     private $use_markerclusterer = 0;
 
     private $notices_categories = array(
@@ -574,13 +574,42 @@ class WPUStoreLocator {
     function get_result_map_position($search) {
         $datas = array();
         $country_list = $this->get_countries(true);
+        $current_language = apply_filters('wpustorelocator_getcurrentlanguage', strtolower(get_locale()));
 
-        // Country mode
-        if ($search['lat'] == 0 && $search['lng'] == 0 && isset($search['country']) && !empty($search['country']) && isset($country_list[$search['country']])) {
-            $country = $country_list[$search['country']];
-            $datas['lat'] = $country['lat'];
-            $datas['lng'] = $country['lng'];
-            $datas['zoom'] = $country['zoom'];
+        if ($search['lat'] == 0 && $search['lng'] == 0) {
+
+            // Country mode
+            if (isset($search['country']) && !empty($search['country']) && isset($country_list[$search['country']])) {
+                $country = $country_list[$search['country']];
+            }
+            else {
+                $country_code = '';
+                // Get coordinates of country for current language
+                switch ($current_language) {
+                    case 'en_en':
+                        $country_code = 'GB';
+                    break;
+                    case 'fr_fr':
+                        $country_code = 'FR';
+                    break;
+                    case 'en_us':
+                        $country_code = 'US';
+                    break;
+                    case 'it_it':
+                        $country_code = 'IT';
+                    break;
+                }
+
+                if (isset($country_list[$country_code])) {
+                    $country = $country_list[$country_code];
+                }
+            }
+
+            if (is_array($country) && isset($country['lat'])) {
+                $datas['lat'] = $country['lat'];
+                $datas['lng'] = $country['lng'];
+                $datas['zoom'] = $country['zoom'];
+            }
         }
 
         // Coordinate mode
@@ -1124,6 +1153,12 @@ class WPUStoreLocator {
 
     function geocode_address($address, $debug = false) {
         $get = wp_remote_get('https://maps.googleapis.com/maps/api/geocode/json?address=' . urlencode($address) . '&key=' . $this->serverapi_key);
+        if (is_wp_error($get)) {
+            return array(
+                'lat' => 0,
+                'lng' => 0
+            );
+        }
         $geoloc = json_decode($get['body']);
         $lat = 0;
         $lng = 0;

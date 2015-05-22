@@ -143,11 +143,14 @@ wpustorelocator.setmarker = function(item) {
   Load search autocomplete
 ---------------------------------------------------------- */
 
+wpustorelocator.autocomplete = false;
+wpustorelocator.autocompleteEvent = false;
 wpustorelocator.loadsearch = function() {
     var input = document.getElementById('wpustorelocator-search-address');
     if (!input) {
         return;
     }
+
     /* Load */
     var baseurl = jQuery('#wpustorelocator-baseurl').val();
     if (baseurl && ('pushState' in history)) {
@@ -155,13 +158,14 @@ wpustorelocator.loadsearch = function() {
     }
 
     /* Autocomplete */
-    var autocomplete = new google.maps.places.Autocomplete(input);
+    init_autocomplete();
+
     jQuery(input).keypress(function(e) {
         var $this = jQuery(this);
         jQuery('#wpustorelocator-search-lat').val('');
         jQuery('#wpustorelocator-search-lng').val('');
         if (e.which == 13) {
-            google.maps.event.trigger(autocomplete, 'place_changed');
+            google.maps.event.trigger(wpustorelocator.autocomplete, 'place_changed');
             if (!jQuery('#wpustorelocator-search-lat').val()) {
                 e.preventDefault();
                 setTimeout(function() {
@@ -170,8 +174,25 @@ wpustorelocator.loadsearch = function() {
             }
         }
     });
-    google.maps.event.addListener(autocomplete, 'place_changed', function() {
-        var place = autocomplete.getPlace(),
+
+    function init_autocomplete() {
+        val = jQuery('#wpustorelocator-country').val() || '';
+        wpustorelocator.autocomplete = new google.maps.places.Autocomplete(input, {
+            componentRestrictions: {
+                country: val.toLowerCase()
+            }
+        });
+        wpustorelocator.autocompleteEvent = google.maps.event.addListener(wpustorelocator.autocomplete, 'place_changed', event_place_changed);
+    }
+
+    function disable_autocomplete() {
+        google.maps.event.removeListener(wpustorelocator.autocompleteEvent);
+        google.maps.event.clearInstanceListeners(wpustorelocator.autocomplete);
+        jQuery(".pac-container").remove();
+    }
+
+    function event_place_changed() {
+        var place = wpustorelocator.autocomplete.getPlace(),
             country_code = 0,
             i;
         if (place && place.address_components) {
@@ -195,13 +216,24 @@ wpustorelocator.loadsearch = function() {
             jQuery('#wpustorelocator-search-lat').val(place.geometry.location.lat());
             jQuery('#wpustorelocator-search-lng').val(place.geometry.location.lng());
         }
-    });
+    };
 
     /* Country */
     var country_selector = jQuery('#wpustorelocator-country');
     country_selector.on('change', function() {
-        input.value = '';
+
+        /* Disable autocomplete */
+        disable_autocomplete();
+
+        /* Init autocomplete */
+        init_autocomplete();
+
+        /* Clear coordinates */
         jQuery('#wpustorelocator-search-lat').val('');
         jQuery('#wpustorelocator-search-lng').val('');
+
+        /* Clear old value */
+        input.value = '';
     });
+
 };
