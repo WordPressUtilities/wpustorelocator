@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.12
+Version: 0.12.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,8 +12,9 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.12';
+    private $script_version = '0.12.1';
     private $use_markerclusterer = 0;
+    private $country_code = '';
 
     private $notices_categories = array(
         'updated',
@@ -567,6 +568,34 @@ class WPUStoreLocator {
         return $countries;
     }
 
+    function get_current_country_code() {
+
+        $country_code = '';
+        if (!empty($this->country_code)) {
+            return $this->country_code;
+        }
+
+        $current_language = apply_filters('wpustorelocator_getcurrentlanguage', strtolower(get_locale()));
+
+        // Get coordinates of country for current language
+        switch ($current_language) {
+            case 'en_en':
+                $country_code = 'GB';
+            break;
+            case 'fr_fr':
+                $country_code = 'FR';
+            break;
+            case 'en_us':
+                $country_code = 'US';
+            break;
+            case 'it_it':
+                $country_code = 'IT';
+            break;
+        }
+        $this->country_code = $country_code;
+        return $country_code;
+    }
+
     /* ----------------------------------------------------------
       Map datas
     ---------------------------------------------------------- */
@@ -574,7 +603,6 @@ class WPUStoreLocator {
     function get_result_map_position($search) {
         $datas = array();
         $country_list = $this->get_countries(true);
-        $current_language = apply_filters('wpustorelocator_getcurrentlanguage', strtolower(get_locale()));
 
         if ($search['lat'] == 0 && $search['lng'] == 0) {
 
@@ -583,23 +611,7 @@ class WPUStoreLocator {
                 $country = $country_list[$search['country']];
             }
             else {
-                $country_code = '';
-                // Get coordinates of country for current language
-                switch ($current_language) {
-                    case 'en_en':
-                        $country_code = 'GB';
-                    break;
-                    case 'fr_fr':
-                        $country_code = 'FR';
-                    break;
-                    case 'en_us':
-                        $country_code = 'US';
-                    break;
-                    case 'it_it':
-                        $country_code = 'IT';
-                    break;
-                }
-
+                $country_code = $this->get_current_country_code();
                 if (isset($country_list[$country_code])) {
                     $country = $country_list[$country_code];
                 }
@@ -616,10 +628,17 @@ class WPUStoreLocator {
         else {
             $datas = $search;
         }
+
+        if(isset($_GET['fromgeo'])){
+            $datas['fromgeo'] = '1';
+        }
+
+
         $html = '';
         foreach ($datas as $id => $name) {
             $html.= ' data-' . $id . '="' . esc_attr($name) . '" ';
         }
+
 
         return $html;
     }
@@ -741,6 +760,14 @@ class WPUStoreLocator {
         $search = $this->get_search_parameters($_GET);
 
         $radius_values = array();
+        $current_country = $this->get_current_country_code();
+        $use_miles = false;
+        switch ($current_country) {
+            case 'US':
+            case 'GB':
+                $use_miles = true;
+            break;
+        }
 
         foreach ($radius_list as $radius) {
             if ($radius <= $current_radius) {
@@ -751,10 +778,16 @@ class WPUStoreLocator {
                 'lng' => $search['lng'],
                 'radius' => $radius,
             ) , $this->options['archive_url']);
+
+            $radius_name = sprintf(__('Extend search to %s km', 'wpustorelocator') , $radius);
+            if ($use_miles) {
+                $radius_name = sprintf(__('Extend search to %s miles', 'wpustorelocator') , round($radius * 0.621371192, 1));
+            }
+
             $radius_values[] = array(
                 'value' => $radius,
                 'url' => $url,
-                'name' => sprintf(__('Extend search to %s km', 'wpustorelocator') , $radius)
+                'name' => $radius_name
             );
         }
         if (!empty($radius_values)) {
