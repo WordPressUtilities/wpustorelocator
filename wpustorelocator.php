@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.12.2
+Version: 0.12.3
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.12.2';
+    private $script_version = '0.12.3';
     private $use_markerclusterer = 0;
     private $country_code = '';
 
@@ -629,16 +629,14 @@ class WPUStoreLocator {
             $datas = $search;
         }
 
-        if(isset($_GET['fromgeo'])){
+        if (isset($_GET['fromgeo'])) {
             $datas['fromgeo'] = '1';
         }
-
 
         $html = '';
         foreach ($datas as $id => $name) {
             $html.= ' data-' . $id . '="' . esc_attr($name) . '" ';
         }
-
 
         return $html;
     }
@@ -1086,6 +1084,8 @@ class WPUStoreLocator {
 
     function get_search_parameters($src) {
         $lat = 0;
+        $country_list = $this->get_countries();
+
         if (isset($src['lat']) && preg_match('/([0-9\.])/', $src['lat'])) {
             $lat = $src['lat'];
         }
@@ -1101,6 +1101,9 @@ class WPUStoreLocator {
         }
 
         if (isset($src['address']) && $lat == 0 && $lng == 0 && !empty($src['address'])) {
+            if ($country !== 0 && isset($country_list[$country])) {
+                $src['address'].= ' ' . $country_list[$country];
+            }
             $details = $this->geocode_address($src['address']);
             $lat = $details['lat'];
             $lng = $details['lng'];
