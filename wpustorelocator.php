@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.12.1
+Version: 0.12.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.12.1';
+    private $script_version = '0.12.2';
     private $use_markerclusterer = 0;
     private $country_code = '';
 
@@ -781,7 +781,7 @@ class WPUStoreLocator {
 
             $radius_name = sprintf(__('Extend search to %s km', 'wpustorelocator') , $radius);
             if ($use_miles) {
-                $radius_name = sprintf(__('Extend search to %s miles', 'wpustorelocator') , round($radius * 0.621371192, 1));
+                $radius_name = sprintf(__('Extend search to %s miles', 'wpustorelocator') , round($radius * 0.621371192));
             }
 
             $radius_values[] = array(
