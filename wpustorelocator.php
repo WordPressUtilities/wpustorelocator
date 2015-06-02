@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.12.3
+Version: 0.12.4
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.12.3';
+    private $script_version = '0.12.4';
     private $use_markerclusterer = 0;
     private $country_code = '';
 
@@ -213,7 +213,7 @@ class WPUStoreLocator {
         if (isset($lang[0])) {
             $mainlang = $lang[0];
         }
-        wp_enqueue_script('wpustorelocator-maps', 'http://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places&key=' . $this->frontapi_key . '&language=' . $mainlang . '&sensor=false', false, '3');
+        wp_enqueue_script('wpustorelocator-maps', 'https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places&key=' . $this->frontapi_key . '&language=' . $mainlang . '&sensor=false', false, '3');
 
         if ($this->is_storelocator_front() || is_singular('stores')) {
             wp_enqueue_script('wpustorelocator-front', plugins_url('/assets/front.js', __FILE__) , array(
