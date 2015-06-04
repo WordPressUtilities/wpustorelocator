@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.12.4
+Version: 0.13
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.12.4';
+    private $script_version = '0.13';
     private $use_markerclusterer = 0;
     private $country_code = '';
 
@@ -679,11 +679,15 @@ class WPUStoreLocator {
             $content.= '</' . $title_tag . '>';
         }
 
-        $content.= $store['metas']['store_address'][0] . ($raw ? ' ' : '<br />');
+        if (!empty($store['metas']['store_address'][0])) {
+            $content.= $store['metas']['store_address'][0] . ($raw ? ' ' : '<br />');
+        }
         if (!empty($store['metas']['store_address2'][0])) {
             $content.= $store['metas']['store_address2'][0] . ($raw ? ' ' : '<br />');
         }
-        $content.= $store['metas']['store_zip'][0] . ' ' . $store['metas']['store_city'][0] . ($raw ? ' ' : '<br />');
+        if (!empty($store['metas']['store_zip'][0]) || !empty($store['metas']['store_city'][0])) {
+            $content.= $store['metas']['store_zip'][0] . ' ' . $store['metas']['store_city'][0] . ($raw ? ' ' : '<br />');
+        }
         if (!empty($store['metas']['store_region'][0])) {
             $content.= $store['metas']['store_region'][0] . ($raw ? ' ' : '<br />');
         }
@@ -735,7 +739,7 @@ class WPUStoreLocator {
             if (isset($_GET['country']) && array_key_exists($_GET['country'], $countries)) {
                 $current_country = $_GET['country'];
             }
-            $return.= '<select id="wpustorelocator-country" name="country">';
+            $return.= '<select ' . (apply_filters('wpustorelocator_selectcountryrequired', false) ? 'required="required"' : '') . ' id="wpustorelocator-country" name="country">';
             $return.= '<option selected disabled>' . __('Select a country', 'wpustorelocator') . '</option>';
             foreach ($countries as $id => $country) {
                 $return.= '<option ' . ($current_country == $id ? 'selected="selected"' : '') . ' value="' . $id . '" data-latlng="' . $country['lat'] . '|' . $country['lng'] . '|' . $country['zoom'] . '">' . $country['name'] . '</option>';

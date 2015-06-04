@@ -20,13 +20,26 @@ function wpustorelocator_initialize() {
 ---------------------------------------------------------- */
 
 wpustorelocator.countryswitch = function() {
-    jQuery('#wpustorelocator-country').on('change', function(e) {
+
+    var countryswitch = jQuery('#wpustorelocator-country'),
+        countryswitchform = countryswitch.closest('form'),
+        input = jQuery('#wpustorelocator-search-address'),
+        button = countryswitchform.find('button[type=submit]');
+
+    if(countryswitch.attr('required') == 'required' && !countryswitch.val()){
+        input.attr('disabled', 'disabled');
+        button.attr('disabled', 'disabled');
+    }
+
+    countryswitch.on('change', function(e) {
         var coords = jQuery(this).find(":selected").attr('data-latlng').split('|'),
             zoom = 6,
             latlng = new google.maps.LatLng(coords[0], coords[1]);
         if (coords[2]) {
             zoom = parseInt(coords[2], 10);
         }
+        input.removeAttr('disabled');
+        button.removeAttr('disabled');
         wpustorelocator_map.setZoom(zoom);
         wpustorelocator_map.panTo(latlng);
     });
