@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2015-05-24 23:53+0100\n"
+"POT-Creation-Date: 2015-06-05 19:02+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -15,130 +15,130 @@ msgstr ""
 "X-Poedit-KeywordsList: __;_e;_n\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././wpustorelocator.php:181
+#: .././wpustorelocator.php:185
 #, php-format
 msgid "The plugin %s should be installed."
 msgstr "Le plugin %s devrait être installé."
 
-#: .././wpustorelocator.php:242
+#: .././wpustorelocator.php:246
 msgid "Store"
 msgstr "Boutique"
 
-#: .././wpustorelocator.php:243
+#: .././wpustorelocator.php:247
 msgid "Stores"
 msgstr "Boutiques"
 
-#: .././wpustorelocator.php:280
+#: .././wpustorelocator.php:284
 msgid "Radius list"
 msgstr "Liste des distances"
 
-#: .././wpustorelocator.php:285
+#: .././wpustorelocator.php:289
 msgid "Use marker clusterer"
 msgstr "Utiliser le Marker Clusterer"
 
-#: .././wpustorelocator.php:292
+#: .././wpustorelocator.php:296
 msgid "Server API Key"
 msgstr "Clef API Server"
 
-#: .././wpustorelocator.php:296
+#: .././wpustorelocator.php:300
 msgid "Front API Key"
 msgstr "Clef API Front"
 
-#: .././wpustorelocator.php:311
+#: .././wpustorelocator.php:315
 msgid "Details"
 msgstr "Détails"
 
-#: .././wpustorelocator.php:317
+#: .././wpustorelocator.php:321
 msgid "Localization"
 msgstr "Localisation"
 
-#: .././wpustorelocator.php:323
+#: .././wpustorelocator.php:327
 msgid "Map position"
 msgstr "Position de la carte"
 
-#: .././wpustorelocator.php:339
+#: .././wpustorelocator.php:343
 msgid "Name"
 msgstr "Nom"
 
-#: .././wpustorelocator.php:343
+#: .././wpustorelocator.php:347
 msgid "Email address"
 msgstr "Adresse email"
 
-#: .././wpustorelocator.php:347
+#: .././wpustorelocator.php:351
 msgid "Opening time"
 msgstr "Horaires d'ouverture"
 
-#: .././wpustorelocator.php:361
+#: .././wpustorelocator.php:365
 msgid "Phone number"
 msgstr "Numéro de téléphone"
 
-#: .././wpustorelocator.php:367
+#: .././wpustorelocator.php:371
 msgid "Address"
 msgstr "Adresse"
 
-#: .././wpustorelocator.php:371
+#: .././wpustorelocator.php:375
 msgid "Address2"
 msgstr "Adresse2"
 
-#: .././wpustorelocator.php:375
+#: .././wpustorelocator.php:379
 msgid "Zip code"
 msgstr "Code postal"
 
-#: .././wpustorelocator.php:379
+#: .././wpustorelocator.php:383
 msgid "City"
 msgstr "Ville"
 
-#: .././wpustorelocator.php:385
+#: .././wpustorelocator.php:389
 msgid "Region"
 msgstr "Région"
 
-#: .././wpustorelocator.php:389
+#: .././wpustorelocator.php:393
 msgid "Country"
 msgstr "Pays"
 
-#: .././wpustorelocator.php:399
+#: .././wpustorelocator.php:403
 msgid "Latitude"
 msgstr "Latitude"
 
-#: .././wpustorelocator.php:403
+#: .././wpustorelocator.php:407
 msgid "Longitude"
 msgstr "Longitude"
 
-#: .././wpustorelocator.php:407
+#: .././wpustorelocator.php:411
 msgid "Zoom"
 msgstr "Zoom"
 
-#: .././wpustorelocator.php:657
+#: .././wpustorelocator.php:659
 msgid "View this store"
 msgstr "Voir cette boutique"
 
-#: .././wpustorelocator.php:658
+#: .././wpustorelocator.php:660
 msgid "Go to this store"
 msgstr "Itinéraire vers ce magasin"
 
-#: .././wpustorelocator.php:741
+#: .././wpustorelocator.php:747
 msgid "Select a country"
 msgstr "Sélectionner un pays"
 
-#: .././wpustorelocator.php:782
+#: .././wpustorelocator.php:788
 #, php-format
 msgid "Extend search to %s km"
 msgstr "Etendre la recherche à %s km"
 
-#: .././wpustorelocator.php:784
+#: .././wpustorelocator.php:790
 #, php-format
 msgid "Extend search to %s miles"
 msgstr "Etendre la recherche à %s miles"
 
-#: .././wpustorelocator.php:797
+#: .././wpustorelocator.php:803
 msgid "Extend search to ..."
 msgstr "Étendre la recherche à..."
 
-#: .././wpustorelocator.php:844 .././wpustorelocator.php:922
+#: .././wpustorelocator.php:850 .././wpustorelocator.php:928
 msgid "Geocoding"
 msgstr "Géocodage"
 
-#: .././wpustorelocator.php:850
+#: .././wpustorelocator.php:856
 msgid ""
 "Please load the address below and click on a suggested result to update GPS "
 "Coordinates"
@@ -146,50 +146,77 @@ msgstr ""
 "Veuillez charger l'adresse ci-dessous, et cliquer sur un résultat suggéré "
 "afin de mettre à jour les coordonnées GPS."
 
-#: .././wpustorelocator.php:852
+#: .././wpustorelocator.php:858
 msgid "Load address"
 msgstr "Charger l'adresse"
 
-#: .././wpustorelocator.php:908
+#: .././wpustorelocator.php:914
 msgid "Stores with default localization:"
 msgstr "Magasins avec localisation par défaut :"
 
-#: .././wpustorelocator.php:916
+#: .././wpustorelocator.php:922
 msgid "Infos"
 msgstr "Infos"
 
-#: .././wpustorelocator.php:923
+#: .././wpustorelocator.php:929
 msgid "Launch geocoding"
 msgstr "Lancer le géocodage"
 
-#: .././wpustorelocator.php:927 .././wpustorelocator.php:936
+#: .././wpustorelocator.php:933 .././wpustorelocator.php:963
 msgid "Import"
 msgstr "Importer"
 
-#: .././wpustorelocator.php:930
+#: .././wpustorelocator.php:936
 msgid "Store list file (.csv)"
 msgstr "Fichier liste des magasins ( .csv)"
 
-#: .././wpustorelocator.php:933
+#: .././wpustorelocator.php:936
+msgid "Settings"
+msgstr "Réglages"
+
+#: .././wpustorelocator.php:944
+msgid "Format:"
+msgstr "Format :"
+
+#: .././wpustorelocator.php:945
+msgid ""
+"Store name;Address;Address #2;Zipcode;City;State/Province/County;Country;"
+"Phone"
+msgstr ""
+"Nom du magasin;Adresse;Adresse #2;Code postal;Ville;État/Province/comté;Pays;"
+"Téléphone"
+
+#: .././wpustorelocator.php:946
+msgid "Download a CSV model"
+msgstr "Télécharger un modèle de CSV"
+
+#: .././wpustorelocator.php:949 .././wpustorelocator.php:951
+msgid "Select a CSV separator"
+msgstr "Sélectionnez un séparateur CSV"
+
+#: .././wpustorelocator.php:958
 msgid "Replace the previous stores"
 msgstr "Remplacer les magasins précédents"
 
-#: .././wpustorelocator.php:973
+#: .././wpustorelocator.php:1005
 #, php-format
 msgid "%s stores have been imported."
 msgstr "%s magasins ont été importés."
 
-#: .././wpustorelocator.php:973
+#: .././wpustorelocator.php:1005
 msgid "1 store has been imported."
 msgstr "1 magasin a été importé."
 
-#: .././wpustorelocator.php:1055
+#: .././wpustorelocator.php:1087
 msgid "All countries"
 msgstr "Tous les pays"
 
-#: .././wpustorelocator.php:1420
+#: .././wpustorelocator.php:1457
 msgid "Once 10 minutes"
 msgstr "Toutes les 10 minutes"
+
+#~ msgid "Download file example"
+#~ msgstr "Télécharger un fichier d'exemple"
 
 #~ msgid "Geoloc stores"
 #~ msgstr "Geoloc magasins"

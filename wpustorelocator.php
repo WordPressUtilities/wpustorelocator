@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.13
+Version: 0.14
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,10 +12,14 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.13';
+    private $script_version = '0.14';
     private $use_markerclusterer = 0;
     private $country_code = '';
 
+    private $csv_separators = array(
+        ';',
+        ',',
+    );
     private $notices_categories = array(
         'updated',
         'update-nag',
@@ -929,10 +933,31 @@ class WPUStoreLocator {
         echo '<h3>' . __('Import', 'wpustorelocator') . '</h3>';
 
         // Download model
-        echo '<p><label><strong>' . __('Store list file (.csv)', 'wpustorelocator') . '</strong></label><br /><input type="file" name="file" value="" /><br /><small><strong>Format :</strong> Store name;Address;Address #2;Zipcode;City;Etat/Province/Comté;Country;Telephone</small></p>';
+        echo '<p><label><strong>' . __('Store list file (.csv)', 'wpustorelocator') . '</strong></label><br /><input type="file" name="file" value="" /><small><a href="#" onclick="jQuery(\'#wpustorelocator-importdetails\').show();jQuery(this).remove();return false;"><br />' . __('Settings') . '</a></small></p>';
+
+        echo '<div id="wpustorelocator-importdetails" style="display: none;">';
+
+
+        $data_base64 = 'data:text/csv;base64,QXBwbGUgU3RvcmUgT3DDqXJhOzEyIFJ1ZSBIYWzDqXZ5Ozs3NTAwOTtQYXJpczvDjmxlLWRlLUZyYW5jZTtGcmFuY2U7MDE0NDgzNDIwMApBcHBsZSBTdG9yZSBMb3V2cmU7OTkgcnVlIGRlIFJpdm9saTs7NzUwMDE7UGFyaXM7w45sZS1kZS1GcmFuY2U7RnJhbmNlOzE1NzMyMjg4Mjk=';
+
+        // CSV Format
+        echo '<p><strong>' . __('Format:', 'wpustorelocator') . '</strong>';
+        echo '<br />' . __('Store name;Address;Address #2;Zipcode;City;State/Province/County;Country;Phone', 'wpustorelocator');
+        echo '<br /><a download="storelocator-example.csv" href="'.$data_base64.'">'.__('Download a CSV model', 'wpustorelocator').'</a>';
+        echo '</p>';
+
+        echo '<p><strong><label for="wpustorelocator-csvseparator">' . __('Select a CSV separator', 'wpustorelocator') . '</label></strong><br />';
+        echo '<select id="wpustorelocator-csvseparator" name="separator">';
+        echo '<option value="" disabled selected style="display:none;">' . __('Select a CSV separator', 'wpustorelocator') . '</option>';
+        foreach ($this->csv_separators as $separator) {
+            echo '<option value="' . $separator . '">' . $separator . '</option>';
+        }
+        echo '</select></p>';
 
         // Destroy ?
         echo '<p><label><input type="checkbox" name="replace" value="" /> ' . __('Replace the previous stores', 'wpustorelocator') . '</label></p>';
+
+        echo '</div>';
 
         // upload input and destroy
         echo submit_button(__('Import', 'wpustorelocator'));
@@ -957,8 +982,13 @@ class WPUStoreLocator {
                 $this->admin__delete_all_stores();
             }
 
+            $separator = $this->csv_separators[0];
+            if (isset($_POST['separator']) && in_array($_POST['separator'], $this->csv_separators)) {
+                $separator = $_POST['separator'];
+            }
+
             // Extract list
-            $stores_list = $this->get_array_from_csv($_FILES['file']['tmp_name']);
+            $stores_list = $this->get_array_from_csv($_FILES['file']['tmp_name'], $separator);
 
             // - Insert new
             $inserted_stores = 0;
@@ -978,11 +1008,11 @@ class WPUStoreLocator {
         }
     }
 
-    function get_array_from_csv($csv_file) {
+    function get_array_from_csv($csv_file, $separator = ';') {
         $list = array();
         $row = 1;
         if (($handle = fopen($csv_file, "r")) !== FALSE) {
-            while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+            while (($data = fgetcsv($handle, 1000, $separator)) !== FALSE) {
                 if ($data[1] != 'Address') {
                     $list[] = $data;
                 }
