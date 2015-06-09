@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.14
+Version: 0.15
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,9 +12,10 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.14';
-    private $use_markerclusterer = 0;
+    private $script_version = '0.15';
     private $country_code = '';
+    public $use_markerclusterer = 0;
+    public $use_preventsingle = 0;
 
     private $csv_separators = array(
         ';',
@@ -38,16 +39,19 @@ class WPUStoreLocator {
         $this->serverapi_key = get_option('wpustorelocator_serverapikey');
         $this->frontapi_key = get_option('wpustorelocator_frontapikey');
         $this->use_markerclusterer = (get_option('wpustorelocator_use_markerclusterer') == 1);
+        $this->use_preventsingle = (get_option('wpustorelocator_preventsingle') == 1);
+        $this->selectcountryrequired = (get_option('wpustorelocator_selectcountryrequired') == 1);
 
         $pages = array(
             'admin' => array(
-                'name' => 'Store options',
+                'name' => __('Store locator', 'wpustorelocator') ,
                 'function_content' => array(&$this,
                     'admin_options'
                 ) ,
                 'function_action' => array(&$this,
                     'admin_options_postAction'
                 ) ,
+                'icon_url' => 'dashicons-location-alt',
                 'has_file' => true
             )
         );
@@ -188,7 +192,7 @@ class WPUStoreLocator {
     }
 
     function prevent_single() {
-        $prevent_single = apply_filters('wpustorelocator_preventsingle', false);
+        $prevent_single = apply_filters('wpustorelocator_preventsingle', $this->use_preventsingle);
         if (is_singular('stores') && $prevent_single) {
             wp_redirect($this->options['archive_url']);
             die;
@@ -242,7 +246,7 @@ class WPUStoreLocator {
 
     function set_theme_posttypes($post_types) {
         $post_types['stores'] = array(
-            'menu_icon' => 'dashicons-location-alt',
+            'menu_icon' => 'dashicons-store',
             'name' => __('Store', 'wpustorelocator') ,
             'plural' => __('Stores', 'wpustorelocator') ,
             'female' => 1,
@@ -287,6 +291,16 @@ class WPUStoreLocator {
         );
         $options['wpustorelocator_use_markerclusterer'] = array(
             'label' => __('Use marker clusterer', 'wpustorelocator') ,
+            'box' => 'wpustorelocator_settings',
+            'type' => 'select'
+        );
+        $options['wpustorelocator_preventsingle'] = array(
+            'label' => __('Prevent single store view', 'wpustorelocator') ,
+            'box' => 'wpustorelocator_settings',
+            'type' => 'select'
+        );
+        $options['wpustorelocator_selectcountryrequired'] = array(
+            'label' => __('Selecting a country is required', 'wpustorelocator') ,
             'box' => 'wpustorelocator_settings',
             'type' => 'select'
         );
@@ -646,7 +660,7 @@ class WPUStoreLocator {
     }
 
     function get_json_from_storelist($stores) {
-        $prevent_single = apply_filters('wpustorelocator_preventsingle', false);
+        $prevent_single = apply_filters('wpustorelocator_preventsingle', $this->use_preventsingle);
         $datas = array();
         foreach ($stores as $store) {
             $itinerary_link = 'https://maps.google.com/?daddr=' . urlencode($this->get_address_from_store($store, '', 1));
@@ -712,7 +726,7 @@ class WPUStoreLocator {
         $html = '';
         $html.= '<form id="wpustorelocator-search" action="#" method="get"><div>';
         $html.= $this->get_default_search_fields();
-        $html.= '<button class="cssc-button" type="submit">Search</button>';
+        $html.= '<button class="cssc-button" type="submit">' . __('Search', 'wpustorelocator') . '</button>';
         $html.= '</div></form>';
         return $html;
     }
@@ -743,8 +757,9 @@ class WPUStoreLocator {
             if (isset($_GET['country']) && array_key_exists($_GET['country'], $countries)) {
                 $current_country = $_GET['country'];
             }
-            $return.= '<select ' . (apply_filters('wpustorelocator_selectcountryrequired', false) ? 'required="required"' : '') . ' id="wpustorelocator-country" name="country">';
-            $return.= '<option selected disabled>' . __('Select a country', 'wpustorelocator') . '</option>';
+            $is_required_select = apply_filters('wpustorelocator_selectcountryrequired', $this->selectcountryrequired);
+            $return.= '<select ' . ($is_required_select ? 'required="required"' : '') . ' id="wpustorelocator-country" name="country">';
+            $return.= '<option selected disabled>' . __('Select a country', 'wpustorelocator') . ($is_required_select ? ' (' . __('required', 'wpustorelocator') . ')' : '') . '</option>';
             foreach ($countries as $id => $country) {
                 $return.= '<option ' . ($current_country == $id ? 'selected="selected"' : '') . ' value="' . $id . '" data-latlng="' . $country['lat'] . '|' . $country['lng'] . '|' . $country['zoom'] . '">' . $country['name'] . '</option>';
             }
@@ -937,13 +952,12 @@ class WPUStoreLocator {
 
         echo '<div id="wpustorelocator-importdetails" style="display: none;">';
 
-
         $data_base64 = 'data:text/csv;base64,QXBwbGUgU3RvcmUgT3DDqXJhOzEyIFJ1ZSBIYWzDqXZ5Ozs3NTAwOTtQYXJpczvDjmxlLWRlLUZyYW5jZTtGcmFuY2U7MDE0NDgzNDIwMApBcHBsZSBTdG9yZSBMb3V2cmU7OTkgcnVlIGRlIFJpdm9saTs7NzUwMDE7UGFyaXM7w45sZS1kZS1GcmFuY2U7RnJhbmNlOzE1NzMyMjg4Mjk=';
 
         // CSV Format
         echo '<p><strong>' . __('Format:', 'wpustorelocator') . '</strong>';
         echo '<br />' . __('Store name;Address;Address #2;Zipcode;City;State/Province/County;Country;Phone', 'wpustorelocator');
-        echo '<br /><a download="storelocator-example.csv" href="'.$data_base64.'">'.__('Download a CSV model', 'wpustorelocator').'</a>';
+        echo '<br /><a download="storelocator-example.csv" href="' . $data_base64 . '">' . __('Download a CSV model', 'wpustorelocator') . '</a>';
         echo '</p>';
 
         echo '<p><strong><label for="wpustorelocator-csvseparator">' . __('Select a CSV separator', 'wpustorelocator') . '</label></strong><br />';
