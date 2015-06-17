@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Store locator
 Description: Manage stores localizations
-Version: 0.15
+Version: 0.16
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ Thanks to : http://biostall.com/performing-a-radial-search-with-wp_query-in-word
 */
 
 class WPUStoreLocator {
-    private $script_version = '0.15';
+    private $script_version = '0.16';
     private $country_code = '';
     public $use_markerclusterer = 0;
     public $use_preventsingle = 0;
@@ -41,6 +41,7 @@ class WPUStoreLocator {
         $this->use_markerclusterer = (get_option('wpustorelocator_use_markerclusterer') == 1);
         $this->use_preventsingle = (get_option('wpustorelocator_preventsingle') == 1);
         $this->selectcountryrequired = (get_option('wpustorelocator_selectcountryrequired') == 1);
+        $this->limitsearchincountry = (get_option('wpustorelocator_limitsearchincountry') == 1);
 
         $pages = array(
             'admin' => array(
@@ -304,6 +305,11 @@ class WPUStoreLocator {
             'box' => 'wpustorelocator_settings',
             'type' => 'select'
         );
+        $options['wpustorelocator_limitsearchincountry'] = array(
+            'label' => __('Search is limited to the selected country', 'wpustorelocator') ,
+            'box' => 'wpustorelocator_settings',
+            'type' => 'select'
+        );
 
         /* API */
         $options['wpustorelocator_serverapikey'] = array(
@@ -419,6 +425,13 @@ class WPUStoreLocator {
         $fields['store_lng'] = array(
             'box' => 'stores_mapposition',
             'name' => __('Longitude', 'wpustorelocator')
+        );
+        $fields['store_defaultlat'] = array(
+            'box' => 'stores_mapposition',
+            'name' => __('Default Coordinates', 'wpustorelocator') ,
+            'type' => 'select',
+            'admin_column' => true,
+            'admin_column_sortable' => true,
         );
         $fields['store_zoom'] = array(
             'box' => 'stores_mapposition',
@@ -1192,7 +1205,10 @@ class WPUStoreLocator {
     }
 
     function location_posts_country($query) {
-        if ($this->tmp_lat == 0 && $this->tmp_lng == 0 && !empty($this->tmp_country)) {
+
+        $limitsearchincountry = apply_filters('wpustorelocator_limitsearchincountry', $this->limitsearchincountry);
+
+        if ((($this->tmp_lat == 0 && $this->tmp_lng == 0) || $limitsearchincountry) && !empty($this->tmp_country)) {
             $query->set("meta_query", array(
                 array(
                     'key' => 'store_country',
